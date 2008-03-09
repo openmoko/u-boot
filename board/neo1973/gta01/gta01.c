@@ -227,11 +227,15 @@ int board_init (void)
 
 int board_late_init(void)
 {
+	extern unsigned char booted_from_nand;
 	unsigned char tmp;
 	char buf[32];
 
 	/* Initialize the Power Management Unit with a safe register set */
 	pcf50606_init();
+
+	if (!booted_from_nand)
+		goto woken_by_reset;
 
 	/* obtain wake-up reason, save INT1 in environment */
 	tmp = pcf50606_reg_read(PCF50606_REG_INT1);
@@ -275,6 +279,7 @@ int board_late_init(void)
 		neo1973_poweroff();
 	}
 
+woken_by_reset:
 	/* if there's no other reason, must be regular reset */
 	neo1973_wakeup_cause = NEO1973_WAKEUP_RESET;
 

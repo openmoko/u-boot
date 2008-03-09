@@ -77,6 +77,14 @@ _fiq:			.word fiq
  *************************************************************************
  */
 
+#ifdef CONFIG_S3C2410_NAND_BOOT
+.globl	booted_from_nand
+booted_from_nand:
+	.word	0
+_booted_from_nand:
+	.word	booted_from_nand
+#endif /* CONFIG_S3C2410_NAND_BOOT */
+
 _TEXT_BASE:
 	.word	TEXT_BASE
 
@@ -312,6 +320,9 @@ notmatch:
 #endif
 1:	b	1b
 done_nand_read:
+	ldr	r0, _booted_from_nand
+	mov	r1, #1
+	strb	r1, [r0]
 #endif /* CONFIG_S3C2410_NAND_BOOT */
 done_relocate:
 #endif /* CONFIG_SKIP_RELOCATE_UBOOT */
