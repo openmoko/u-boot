@@ -122,7 +122,9 @@ static int s3c2410_nand_correct_data(struct mtd_info *mtd, u_char *dat,
 }
 #endif
 
-int board_nand_init(struct nand_chip *nand)
+int board_nand_init(void) __attribute__((weak, alias("__board_nand_init")));
+
+int __board_nand_init(struct nand_chip *nand)
 {
 	u_int32_t cfg;
 	u_int8_t tacls, twrph0, twrph1;
