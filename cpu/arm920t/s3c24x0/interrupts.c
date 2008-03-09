@@ -31,14 +31,15 @@
 
 #include <common.h>
 #if defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) || \
-    defined(CONFIG_S3C2440) || defined (CONFIG_TRAB)
+    defined(CONFIG_S3C2440) || defined (CONFIG_S3C2442) || \
+    defined (CONFIG_TRAB)
 
 #include <arm920t.h>
 #if defined(CONFIG_S3C2400)
 #include <s3c2400.h>
 #elif defined(CONFIG_S3C2410)
 #include <s3c2410.h>
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 #include <s3c2440.h>
 #endif
 
@@ -62,7 +63,7 @@ int interrupt_init (void)
 	/* use PWM Timer 4 because it has no output */
 	/* prescaler for Timer 4 is 16 */
 	timers->TCFG0 = 0x0f00;
-#ifndef CONFIG_S3C2440
+#if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410)
 	if (timer_load_val == 0)
 	{
 		/*
@@ -241,4 +242,5 @@ void s3c2410_irq(void)
 #endif /* USE_IRQ */
 
 #endif /* defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) ||
-	  defined(CONFIG_S3C2440) || defined (CONFIG_TRAB) */
+	  defined(CONFIG_S3C2440) || defined (CONFIG_S3C2442) ||
+	  defined (CONFIG_TRAB) */

@@ -31,13 +31,13 @@
 
 #include <common.h>
 #if defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) || \
-    defined (CONFIG_S3C2440) || defined (CONFIG_TRAB)
+    defined (CONFIG_S3C2440) || defined(CONFIG_S3C2442) || defined (CONFIG_TRAB)
 
 #if defined(CONFIG_S3C2400)
 #include <s3c2400.h>
 #elif defined(CONFIG_S3C2410)
 #include <s3c2410.h>
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 #include <s3c2440.h>
 #endif
 
@@ -71,7 +71,7 @@ static ulong get_PLLCLK(int pllreg)
     s = r & 0x3;
 #if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410)
     return((CONFIG_SYS_CLK_FREQ * m) / (p << s));
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
     /* To avoid integer overflow, changed the calc order */
     if (pllreg == MPLL)
     	return ( 2 * m * (CONFIG_SYS_CLK_FREQ / (p << s )) );
@@ -95,7 +95,7 @@ ulong get_HCLK(void)
 
 #if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410)
     return((clk_power->CLKDIVN & 0x2) ? get_FCLK()/2 : get_FCLK());
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
     switch (clk_power->CLKDIVN & 0x6) {
         case 0x0:
 	    return get_FCLK();
@@ -127,4 +127,5 @@ ulong get_UCLK(void)
 }
 
 #endif /* defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) ||
-          defined(CONFIG_S3C2440) || defined (CONFIG_TRAB) */
+          defined(CONFIG_S3C2440) || defined (CONFIG_S3C2442) ||
+	  defined (CONFIG_TRAB) */

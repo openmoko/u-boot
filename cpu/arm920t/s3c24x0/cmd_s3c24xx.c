@@ -29,7 +29,7 @@
 #include <net.h>		/* for print_IPaddr */
 #if defined(CONFIG_S3C2410)
 #include <s3c2410.h>
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 #include <s3c2440.h>
 #endif
 
@@ -58,7 +58,7 @@ struct s3c24x0_pll_speed {
 #define CLKDIVN_1_2_4	0x03
 #define CLKDIVN_1_4_4	0x04
 
-#if defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 #define CLKDIVN_1_4_8	0x05
 #define CLKDIVN_1_3_6	0x07
 #endif
@@ -136,6 +136,67 @@ static const struct s3c24x0_pll_speed pll_configs[] = {
 		.mhz = 399,
 		.mpllcon = ((0x6e << 12) + (0x3 << 4) + 0x1),
 		.clkdivn = CLKDIVN_1_3_6,
+		.camdivn = 0,
+	},
+#else
+#error "clock frequencies != 12MHz / 16.9344MHz not supported"
+#endif
+};
+#elif defined(CONFIG_S3C2442)
+#if (CONFIG_SYS_CLK_FREQ == 12000000)
+/* The value suggested in the user manual ((80 << 12) + (8 << 4) + 1) leads to
+ * 52MHz, i.e. completely wrong */
+static const u_int32_t upllcon = ((88 << 12) + (4 << 4) + 2);
+static const struct s3c24x0_pll_speed pll_configs[] = {
+	{
+		.mhz = 200,
+		.mpllcon = ((42 << 12) + (1 << 4) + 1),
+		.clkdivn = CLKDIVN_1_2_4,
+		.camdivn = 0,
+	},
+	{
+		.mhz = 300,
+		.mpllcon = ((67 << 12) + (1 << 4) + 1),
+		.clkdivn = CLKDIVN_1_3_6,
+		.camdivn = 0,
+	},
+	{
+		/* Make sure you are running at 1.4VDDiarm if you use this mode*/
+		.mhz = 400,
+		.mpllcon = ((42 << 12) + (1 << 4) + 0),
+		.clkdivn = CLKDIVN_1_4_8,
+		.camdivn = 0,
+	},
+	{
+		/* This is MSP54 specific, as per openmoko calculations */
+		/* Make sure you are running at 1.7VDDiarm if you use this mode*/
+		.mhz = 500,
+		.mpllcon = ((96 << 12) + (3 << 4) + 0),
+		.clkdivn = CLKDIVN_1_4_8,
+		.camdivn = 0,
+	},
+#elif (CONFIG_SYS_CLK_FREQ == 16934400)
+static const u_int32_t upllcon = ((26 << 12) + (4 << 4) + 1);
+static const struct s3c24x0_pll_speed pll_configs[] = {
+	{
+		.mhz = 296,
+		.mpllcon = ((62 << 12) + (1 << 4) + 2),
+		.clkdivn = CLKDIVN_1_3_6,
+		.camdivn = 0,
+	},
+	{
+		/* Make sure you are running at 1.4VDDiarm if you use this mode*/
+		.mhz = 400,
+		.mpllcon = ((63 << 12) + (4 << 4) + 0),
+		.clkdivn = CLKDIVN_1_4_8,
+		.camdivn = 0,
+	},
+	{
+		/* This is MSP54 specific, as per data sheet. */
+		/* Make sure you are running at 1.7VDDiarm if you use this mode*/
+		.mhz = 500,
+		.mpllcon = ((110 << 12) + (2 << 4) + 1),
+		.clkdivn = CLKDIVN_1_4_8,
 		.camdivn = 0,
 	},
 #else

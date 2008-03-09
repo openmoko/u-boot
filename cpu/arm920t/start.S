@@ -33,7 +33,7 @@
 #include <version.h>
 #if defined(CONFIG_S3C2410)
 #include <s3c2410.h>
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 #include <s3c2440.h>
 #endif
 #include <status_led.h>
@@ -170,14 +170,15 @@ copyex:
 	bne	copyex
 #endif
 
-#if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
+    defined(CONFIG_S3C2442)
 	/* turn off the watchdog */
 
 # if defined(CONFIG_S3C2400)
 #  define pWTCON		0x15300000
 #  define INTMSK		0x14400008	/* Interupt-Controller base addresses */
 #  define CLKDIVN	0x14800014	/* clock divisor register */
-#elif defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 #  define pWTCON		0x53000000
 #  define INTMSK		0x4A000008	/* Interupt-Controller base addresses */
 #  define INTSUBMSK	0x4A00001C
@@ -200,6 +201,17 @@ copyex:
 #endif
 # define CLKDIVN_val	7 /* FCLK:HCLK:PCLK = 1:3:6 */
 # define CAMDIVN	0x4C000018
+#elif defined(CONFIG_S3C2442)
+# define INTSUBMSK_val        0xffff
+# if (CONFIG_SYS_CLK_FREQ == 12000000)
+#  define MPLLCON_val ((142 << 12) + (7 << 4) + 1)
+#  define UPLLCON_val   (( 88 << 12) + (8 << 4) + 2)
+# elif (CONFIG_SYS_CLK_FREQ == 16934400)
+#  define MPLLCON_val   ((181 << 12) + (14<< 4) + 1)
+#  define UPLLCON_val   (( 26 << 12) + (4 << 4) + 1)
+# endif
+# define CLKDIVN_val  7 /* FCLK:HCLK:PCLK = 1:3:6 */
+# define CAMDIVN      0x4C000018
 #endif
 
 	ldr     r0, =pWTCON
@@ -212,13 +224,13 @@ copyex:
 	mov	r1, #0xffffffff
 	ldr	r0, =INTMSK
 	str	r1, [r0]
-# if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+# if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 	ldr	r1, =INTSUBMSK_val
 	ldr	r0, =INTSUBMSK
 	str	r1, [r0]
 # endif
 
-#if defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 	/* Make sure we get FCLK:HCLK:PCLK = 1:3:6 */
 	ldr	r0, =CAMDIVN
 	mov	r1, #0
@@ -284,7 +296,7 @@ copyex:
 	str	r1, [r0, #0x28]
 #endif
 
-#endif	/* CONFIG_S3C2400 || CONFIG_S3C2410 || CONFIG_S3C2440 */
+#endif	/* CONFIG_S3C2400 || CONFIG_S3C2410 || CONFIG_S3C2440 || CONFIG_S3C2442 */
 
 #ifndef CONFIG_SKIP_LOWLEVEL_INIT
 #ifndef CONFIG_LL_INIT_NAND_ONLY
@@ -292,7 +304,7 @@ copyex:
 #endif
 
 #if defined(CONFIG_AT91RM9200) || defined(CONFIG_S3C2410) || \
-    defined(CONFIG_S3C2440)
+    defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
 	adr	r0, _start		/* r0 <- current position of code   */
@@ -357,7 +369,7 @@ nand_load:
 	ldr	r2, [r1, #oNFCONF]
 	orr	r2, r2, #0x800		@ disable chip
 	str	r2, [r1, #oNFCONF]
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 	mov	r1, #S3C2440_NAND_BASE
 	ldr	r2, =0xfff0		@ initial value tacls=3,rph0=7,rph1=7
 	ldr	r3, [r1, #oNFCONF]
@@ -367,7 +379,7 @@ nand_load:
 	ldr	r3, [r1, #oNFCONT]
 	orr	r3, r3, #1		@ enable nand controller
 	str	r3, [r1, #oNFCONT]
-#endif /* CONFIG_S3C2440 */
+#endif /* CONFIG_S3C2440 || CONFIG_S3C2442 */
 
 	ldr	r0, _TEXT_BASE		/* upper 128 KiB: relocated uboot   */
 	sub	r0, r0, #CFG_MALLOC_LEN	/* malloc area                      */
@@ -430,7 +442,8 @@ done_nand_read:
 #endif /* CONFIG_S3C2410_NAND_BOOT */
 done_relocate:
 
-#if defined(CONFIG_USE_IRQ) && (defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440))
+#if defined(CONFIG_USE_IRQ) && (defined(CONFIG_S3C2410) || \
+    defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442))
 	/* In the case of the S3C2410, if we've somehow magically (JTAG, ...)
 	   ended up in RAM, then that ram is mapped to 0x30000000 and not 0.
 	   So we need to copy the interrupt vectors, etc.  */
@@ -547,7 +560,7 @@ may_resume:
 #if !defined(CONFIG_SKIP_LOWLEVEL_INIT) && defined(CONFIG_LL_INIT_NAND_ONLY)
 	bl	cpu_init_crit
 #endif
-#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 	/* ensure some refresh has happened */
 	ldr	r1, =0xfffff
 1:	subs	r1, r1, #1
@@ -558,7 +571,7 @@ may_resume:
 	ldr	r0, [ r1 ]
 	tst	r0, #0x02		/* is this resume from power down */
 	ldrne	pc, [r1, #4]		/* gstatus3 */
-#endif /* CONFIG_S3C2410 || CONFIG_S3C244 */
+#endif /* CONFIG_S3C2410 || CONFIG_S3C244 || CONFIG_S3C2442 */
 #endif /* CONFIG_SKIP_LOWLEVEL_INIT */
 
 	mov	pc, r10
