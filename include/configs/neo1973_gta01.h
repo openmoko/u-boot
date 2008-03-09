@@ -200,6 +200,7 @@
 #define	CFG_ENV_IS_IN_NAND	1
 #define CFG_ENV_SIZE		0x4000		/* 16k Total Size of Environment Sector */
 #define CFG_ENV_OFFSET_OOB    1               /* Location of ENV stored in block 0 OOB */
+#define	CFG_PREBOOT_OVERRIDE	1	/* allow preboot from memory */
 
 #define NAND_MAX_CHIPS		1
 #define CFG_NAND_BASE		0x4e000000
