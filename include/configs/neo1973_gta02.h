@@ -192,6 +192,9 @@
 	"stderr=usbtty\0stdout=usbtty\0stdin=usbtty\0"			\
 	"bootargs_base=rootfstype=jffs2 root=/dev/mtdblock6 console=ttySAC2,115200 console=tty0 loglevel=8\0" \
 	""
+#define CONFIG_CMD_LOADENV
+#define CONFIG_CMD_DEFAULTENV
+
 
 /*-----------------------------------------------------------------------
  * Physical Memory Map
