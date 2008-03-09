@@ -196,7 +196,7 @@ relocate:				/* relocate U-Boot to RAM	    */
 	adr	r0, _start		/* r0 <- current position of code   */
 	ldr	r1, _TEXT_BASE		/* test if we run from flash or RAM */
 	cmp     r0, r1                  /* don't reloc during debug         */
-	beq     stack_setup
+	beq     done_relocate
 
 	ldr	r2, _armboot_start
 	ldr	r3, _bss_start
@@ -206,8 +206,14 @@ relocate:				/* relocate U-Boot to RAM	    */
 copy_loop:
 	ldmia	r0!, {r3-r10}		/* copy from source address [r0]    */
 	stmia	r1!, {r3-r10}		/* copy to   target address [r1]    */
-	cmp	r0, r2			/* until source end addreee [r2]    */
+	cmp	r0, r2			/* until source end address [r2]    */
 	ble	copy_loop
+	mov	r0, #0			/* flush v3/v4 cache */
+	mcr	p15, 0, r0, c7, c7, 0
+	ldr	pc, _done_relocate	/* jump to relocated code */
+_done_relocate:
+	.word	done_relocate
+done_relocate:
 #else /* NAND_BOOT */
 relocate:
 copy_myself:
@@ -289,7 +295,7 @@ notmatch:
 1:	b	1b
 done_nand_read:
 #endif /* NAND_BOOT */
-#endif	/* CONFIG_SKIP_RELOCATE_UBOOT */
+#endif /* CONFIG_SKIP_RELOCATE_UBOOT */
 #endif
 	/* Set up the stack						    */
 stack_setup:
