@@ -32,4 +32,10 @@ int neo1973_911_key_pressed(void);
 const char *neo1973_get_charge_status(void);
 int neo1973_set_charge_mode(enum neo1973_charger_cmd cmd);
 
+int neo1973_new_second(void);
+int neo1973_on_key_pressed(void);
+int neo1973_aux_key_pressed(void);
+
+void neo1973_bootmenu(void);
+
 #endif
