@@ -163,6 +163,16 @@
 #define CONFIG_USB_OHCI		1
 #endif
 
+#define CONFIG_USB_DEVICE	1
+#define CONFIG_USB_TTY		1
+#define CFG_CONSOLE_IS_IN_ENV	1
+#define CONFIG_USBD_VENDORID 		0x1457     /* Linux/NetChip */
+#define CONFIG_USBD_PRODUCTID_GSERIAL	0x5120    /* gserial */
+#define CONFIG_USBD_PRODUCTID_CDCACM 	0x5119    /* CDC ACM */
+#define CONFIG_USBD_MANUFACTURER	"OpenMoko, Inc"
+#define CONFIG_USBD_PRODUCT_NAME	"Neo1973 Bootloader " U_BOOT_VERSION
+#define CONFIG_EXTRA_ENV_SETTINGS 	"usbtty=cdc_acm\0"
+
 /*-----------------------------------------------------------------------
  * Physical Memory Map
  */

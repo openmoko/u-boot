@@ -193,8 +193,12 @@ static int ep0_get_descriptor (struct usb_device_instance *device,
 	if (!urb || !urb->buffer || !urb->buffer_length
 	    || (urb->buffer_length < 255)) {
 		dbg_ep0 (2, "invalid urb %p", urb);
+		serial_printf("invalid urb %p", urb);
 		return -1L;
 	}
+
+	/* re-initialize the ep0 buffer pointer */
+	urb->buffer = (u8 *) urb->buffer_data;
 
 	/* setup tx urb */
 	urb->actual_length = 0;
@@ -211,15 +215,8 @@ static int ep0_get_descriptor (struct usb_device_instance *device,
 			     usbd_device_device_descriptor (device, port))) {
 				return -1;
 			}
-			/* copy descriptor for this device */
-			copy_config (urb, device_descriptor,
-				     sizeof (struct usb_device_descriptor),
-				     max);
-
-			/* correct the correct control endpoint 0 max packet size into the descriptor */
-			device_descriptor =
-				(struct usb_device_descriptor *) urb->buffer;
-
+			urb->buffer = device_descriptor;
+			urb->actual_length = MIN(sizeof(*device_descriptor), max);
 		}
 		dbg_ep0(3, "copied device configuration, actual_length: 0x%x", urb->actual_length);
 		break;
@@ -252,11 +249,9 @@ static int ep0_get_descriptor (struct usb_device_instance *device,
 					 index);
 				return -1;
 			}
-			dbg_ep0(0, "attempt to copy %d bytes to urb\n",cpu_to_le16(configuration_descriptor->wTotalLength));
-			copy_config (urb, configuration_descriptor,
-
-					cpu_to_le16(configuration_descriptor->wTotalLength),
-				     max);
+			urb->buffer = configuration_descriptor;
+			urb->actual_length =
+				MIN(le16_to_cpu(configuration_descriptor->wTotalLength), max);
 		}
 
 		break;
@@ -389,6 +384,7 @@ int ep0_recv_setup (struct urb *urb)
 	dbg_ep0 (0, "entering ep0_recv_setup()");
 	if (!urb || !urb->device) {
 		dbg_ep0 (3, "invalid URB %p", urb);
+		serial_printf("invalid URB %p", urb);
 		return -1;
 	}
 
@@ -417,6 +413,7 @@ int ep0_recv_setup (struct urb *urb)
 		}
 		dbg_ep0 (1, "non standard request: %x",
 			 request->bmRequestType & USB_REQ_TYPE_MASK);
+		serial_printf("non standard request: %x", request->bmRequestType & USB_REQ_TYPE_MASK);
 		return -1;	/* Stall here */
 	}
 
@@ -465,6 +462,8 @@ int ep0_recv_setup (struct urb *urb)
 		dbg_ep0 (1, "request %s not allowed in UNKNOWN state: %s",
 			 USBD_DEVICE_REQUESTS (request->bRequest),
 			 usbd_device_states[device->device_state]);
+		serial_printf("request %s not allowed in UNKNOWN state: %s", USBD_DEVICE_REQUESTS (request->bRequest), usbd_device_states[device->device_state]);
+		break;
 		return -1;
 	}
 
@@ -563,6 +562,7 @@ int ep0_recv_setup (struct urb *urb)
 			/*dbg_ep0(2, "address: %d %d %d", */
 			/*        request->wValue, le16_to_cpu(request->wValue), device->address); */
 
+			//udc_set_address(device->address);
 			return 0;
 
 		case USB_REQ_SET_DESCRIPTOR:	/* XXX should we support this? */

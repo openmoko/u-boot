@@ -26,7 +26,7 @@ include $(TOPDIR)/config.mk
 LIB	= lib$(BOARD).a
 
 OBJS	:= gta01.o pcf50606.o ../common/cmd_neo1973.o ../common/jbt6k74.o \
-	   ../common/gsmver.o
+	   ../common/gsmver.o ../common/udc.o
 SOBJS	:= ../common/lowlevel_init.o
 
 $(LIB):	$(OBJS) $(SOBJS)

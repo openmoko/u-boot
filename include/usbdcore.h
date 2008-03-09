@@ -671,4 +671,10 @@ int usbd_endpoint_halted (struct usb_device_instance *device, int endpoint);
 void usbd_rcv_complete(struct usb_endpoint_instance *endpoint, int len, int urb_bad);
 void usbd_tx_complete (struct usb_endpoint_instance *endpoint);
 
+enum usbd_event {
+	UDC_CTRL_PULLUP_ENABLE,
+};
+
+void udc_ctrl(enum usbd_event event, int param);
+#endif
 #endif
