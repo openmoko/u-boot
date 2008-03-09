@@ -50,7 +50,15 @@ int do_terminal(cmd_tbl_t * cmd, int flag, int argc, char *argv[])
 	if (!dev)
 		return -1;
 
-	serial_reinit_all();
+#if defined(CONFIG_ARCH_GTA01_v3) || defined(CONFIG_ARCH_GTA01_v4) || \
+    defined(CONFIG_ARCH_GTA01B_v2) || defined(CONFIG_ARCH_GTA01B_v3) || \
+    defined(CONFIG_ARCH_GTA01B_v4)
+	if (!strcmp(dev->name, "serial") ||
+	    !strcmp(dev->name, "s3ser0"))
+		neo1973_gta01_serial0_gsm(1);
+#endif
+
+	//serial_reinit_all();
 	printf("Entering terminal mode for port %s\n", dev->name);
 	puts("Use '~.' to leave the terminal and get back to u-boot\n");
 
@@ -87,6 +95,14 @@ int do_terminal(cmd_tbl_t * cmd, int flag, int argc, char *argv[])
 			putc(c);
 		}
 	}
+#if defined(CONFIG_ARCH_GTA01_v3) || defined(CONFIG_ARCH_GTA01_v4) || \
+    defined(CONFIG_ARCH_GTA01B_v2) || defined(CONFIG_ARCH_GTA01B_v3) || \
+    defined(CONFIG_ARCH_GTA01B_v4)
+	if (!strcmp(dev->name, "serial") ||
+	    !strcmp(dev->name, "s3ser0"))
+		neo1973_gta01_serial0_gsm(0);
+#endif
+
 	return 0;
 }
 

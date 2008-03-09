@@ -2412,6 +2412,14 @@ omap730p2_cs3boot_config :	unconfig
 sbc2410x_config: unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm920t sbc2410x NULL s3c24x0
 
+gta01_config \
+gta01v3_config \
+gta01bv2_config \
+gta01bv3_config \
+gta01bv4_config \
+gta01v4_config :	unconfig
+	@sh board/neo1973/gta01/split_by_variant.sh $@
+
 qt2410_config	:	unconfig
 	@./mkconfig $(@:_config=) arm arm920t qt2410 NULL s3c24x0
 

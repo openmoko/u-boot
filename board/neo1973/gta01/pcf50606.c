@@ -1,0 +1,100 @@
+
+#include <common.h>
+#include <pcf50606.h>
+
+/* initial register set for PCF50606 in Neo1973 devices */
+const u_int8_t pcf50606_initial_regs[__NUM_PCF50606_REGS] = {
+	[PCF50606_REG_OOCS] 	= 0x00,
+	/* gap */
+	[PCF50606_REG_INT1M]	= PCF50606_INT1_SECOND,
+	[PCF50606_REG_INT2M]	= 0x00,
+	[PCF50606_REG_INT3M]	= PCF50606_INT3_TSCPRES,
+	[PCF50606_REG_OOCC1] 	= PCF50606_OOCC1_RTCWAK |
+				  PCF50606_OOCC1_CHGWAK |
+				  PCF50606_OOCC1_EXTONWAK_HIGH,
+	[PCF50606_REG_OOCC2]	= PCF50606_OOCC2_ONKEYDB_14ms |
+				  PCF50606_OOCC2_EXTONDB_14ms,
+	/* gap */
+	[PCF50606_REG_PSSC]	= 0x00,
+	[PCF50606_REG_PWROKM]	= 0x00,
+	/* gap */
+#if defined(CONFIG_ARCH_GTA01B_v2)
+	[PCF50606_REG_DCDC1]	= 0x1e,	/* GL_3V3: off */
+#elif defined(CONFIG_ARCH_GTA01B_v3) || defined(CONFIG_ARCH_GTA01B_v4)
+	[PCF50606_REG_DCDC1]	= 0x18,	/* GL_1V5: off */
+#endif
+	[PCF50606_REG_DCDC2]	= 0x00,
+	[PCF50606_REG_DCDC3]	= 0x00,
+	[PCF50606_REG_DCDC4]	= 0x30, /* 1.25A */
+
+	[PCF50606_REG_DCDEC1]	= 0xe8, /* IO_3V3: on */
+	[PCF50606_REG_DCDEC2]	= 0x00,
+
+#if defined(CONFIG_ARCH_GTA01_v3) || defined(CONFIG_ARCH_GTA01_v4)
+	[PCF50606_REG_DCUDC1]	= 0xe3, /* CORE_1V8: 1.8V */
+#elif defined(CONFIG_ARCH_GTA01B_v2) || defined(CONFIG_ARCH_GTA01B_v3)
+	[PCF50606_REG_DCUDC1]	= 0xe4, /* CORE_1V8: 2.1V */
+#elif defined(CONFIG_ARCH_GTA01B_v4)
+	[PCF50606_REG_DCUDC1]	= 0xc4, /* CORE_1V8: 2.1V if PWREN2 = HIGH */
+#endif
+	[PCF50606_REG_DCUDC2]	= 0x30, /* 1.25A current limit */
+
+#if defined(CONFIG_ARCH_GTA01_v3)
+	[PCF50606_REG_IOREGC]	= 0x13, /* VTCXO_2V8: off */
+#elif defined(CONFIG_ARCH_GTA01_v4) || defined(CONFIG_ARCH_GTA01B_v2) || \
+      defined(CONFIG_ARCH_GTA01B_v3) || defined(CONFIG_ARCH_GTA01B_v4)
+	//see internal bug 94 [PCF50606_REG_IOREGC]	= 0x18, /* CODEC_3V3: off */
+	[PCF50606_REG_IOREGC]	= 0xf8, /* CODEC_3V3: on */
+#endif
+
+#if defined(CONFIG_ARCH_GTA01_v3) || defined(CONFIG_ARCH_GTA01_v4)
+	[PCF50606_REG_D1REGC1]	= 0x15, /* VRF_3V: off */
+#elif defined(CONFIG_ARCH_GTA01B_v2) || defined(CONFIG_ARCH_GTA01B_v3) || \
+      defined(CONFIG_ARCH_GTA01B_v4)
+	[PCF50606_REG_D1REGC1]	= 0x16, /* BT_3V15: off */
+#endif
+
+#if defined(CONFIG_ARCH_GTA01_v3)
+	[PCF50606_REG_D2REGC1]	= 0xf8, /* SD_3V3: on */
+#elif defined(CONFIG_ARCH_GTA01_v4) || defined(CONFIG_ARCH_GTA01B_v2) || \
+      defined(CONFIG_ARCH_GTA01B_v3) || defined(CONFIG_ARCH_GTA01B_v4)
+	[PCF50606_REG_D2REGC1]	= 0x10, /* GL_2V5: off */
+#endif
+
+#if defined(CONFIG_ARCH_GTA01_v3)
+	[PCF50606_REG_D3REGC1]	= 0x18, /* CODEC_3V3: off */
+#elif defined(CONFIG_ARCH_GTA01_v4)
+	[PCF50606_REG_D3REGC1]	= 0x13, /* VTXCO_2V8: off */
+#elif defined(CONFIG_ARCH_GTA01B_v2) || defined(CONFIG_ARCH_GTA01B_v3)
+	[PCF50606_REG_D3REGC1]	= 0x00, /* USER1: off */
+#elif defined(CONFIG_ARCH_GTA01B_v4)
+	[PCF50606_REG_D3REGC1]	= 0xec, /* STBY_1V8: 2.1V */
+#endif
+
+	[PCF50606_REG_LPREGC1]	= 0xf8, /* LCM_3V3: on */
+	[PCF50606_REG_LPREGC2]	= 0x00,
+
+	[PCF50606_REG_MBCC1]	= 0x01, /* CHGAPE */
+	[PCF50606_REG_MBCC2]	= 0x00,	/* unlimited charging */
+	[PCF50606_REG_MBCC3]	= 0x2a, /* 0.2*Ifast, 4.20V */
+	[PCF50606_REG_BBCC]	= 0x1f, /* 400uA */
+	[PCF50606_REG_ADCC1]	= 0x00,
+	[PCF50606_REG_ADCC2]	= 0x00,
+	/* gap */
+#if defined(CONFIG_ARCH_GTA01B_v4)
+	[PCF50606_REG_ACDC1]	= 0x86,	/* ACD thresh 1.6V, enabled */
+#else
+	[PCF50606_REG_ACDC1]	= 0x00,
+#endif
+	[PCF50606_REG_BVMC]	= PCF50606_BVMC_THRSHLD_3V3,
+	[PCF50606_REG_PWMC1]	= 0x00,
+	[PCF50606_REG_LEDC1]	= 0x00,
+	[PCF50606_REG_LEDC2]	= 0x00,
+	[PCF50606_REG_GPOC1]	= 0x00,
+	[PCF50606_REG_GPOC2]	= 0x00,
+	[PCF50606_REG_GPOC3]	= 0x00,
+	[PCF50606_REG_GPOC4]	= 0x00,
+	[PCF50606_REG_GPOC5]	= 0x00,
+};
+
+
