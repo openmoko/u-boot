@@ -32,7 +32,7 @@
 #include <common.h>
 #if defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) || \
     defined(CONFIG_S3C2440) || defined (CONFIG_S3C2442) || \
-    defined (CONFIG_TRAB)
+    defined(CONFIG_S3C2443) || defined (CONFIG_TRAB)
 
 #include <arm920t.h>
 #if defined(CONFIG_S3C2400)
@@ -41,6 +41,8 @@
 #include <s3c2410.h>
 #elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 #include <s3c2440.h>
+#elif defined(CONFIG_S3C2443)
+#include <s3c2443.h>
 #endif
 
 int timer_load_val = 0;
@@ -187,6 +189,7 @@ ulong get_tbclk (void)
 #elif defined(CONFIG_SBC2410X) || \
       defined(CONFIG_SMDK2410) || \
       defined(CONFIG_SMDK2440) || \
+      defined(CONFIG_SMDK2443) || \
       defined(CONFIG_VCMA9)
 	tbclk = CFG_HZ;
 #else
