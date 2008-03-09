@@ -83,6 +83,59 @@
 #define	NFDATA		__REGb(NF_BASE + oNFDATA)
 #define	NFSTAT		__REGb(NF_BASE + oNFSTAT)
 
+#if defined(CONFIG_HXD8)
+static int hxd8_nand_dev_ready(struct mtd_info *mtd)
+{
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+	u_int32_t val = gpio->GPCDAT;
+
+	switch (nand_curr_device) {
+		case 0:
+			return (NFSTAT & 0x01);
+		case 1:	/* RnB 3 */
+			return ((val>>6) & 0x01);
+		case 2:	/* RnB 4 */
+			return ((val>>7) & 0x01);
+		case 3:	/* RnB 2 */
+			return  ((val>>5) & 0x01);
+		default:
+			return 0;
+	}
+}
+
+/* 4G Nand flash chip select function */
+static void hxd8_nand_select_chip(struct nand_chip *this, int chip)
+{
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+
+	if (chip == 0)
+		gpio->GPGDAT &=  ~(1 << 1);
+	else
+		gpio->GPGDAT |=  (1 << 1);
+
+	if (chip == 1)
+		gpio->GPADAT &=  ~(1 << 15);
+	else
+		gpio->GPADAT |= (1 << 15);
+
+	if (chip == 2)
+		gpio->GPADAT &=  ~(1 << 16);
+	else
+		gpio->GPADAT |=  (1 << 16);
+
+	if (chip == 3)
+		gpio->GPADAT &=  ~(1 << 14);
+	else
+		gpio->GPADAT |= (1 << 14);
+
+	/* UGLY: ew don't have mtd_info pointer, but know that
+	 * s3c24xx hwcontrol function does not use it for CLRNCE */
+	if (chip == -1)
+		this->hwcontrol(NULL, NAND_CTL_CLRNCE);
+	else
+		this->hwcontrol(NULL, NAND_CTL_SETNCE);
+}
+#endif
 
 static void s3c2410_hwcontrol(struct mtd_info *mtd, int cmd)
 {
@@ -206,6 +259,11 @@ int __board_nand_init(struct nand_chip *nand)
 	nand->eccmode = NAND_ECC_HW3_512;
 #else
 	nand->eccmode = NAND_ECC_SOFT;
+#endif
+
+#if defined(CONFIG_HXD8)
+	nand->dev_ready = hxd8_nand_dev_ready;
+	nand->select_chip = hxd8_nand_select_chip;
 #endif
 
 #ifdef CONFIG_S3C2410_NAND_BBT
