@@ -29,6 +29,12 @@
 #undef	__ASSEMBLY__
 #include <environment.h>
 
+#if defined(CFG_ENV_OFFSET_PATCHED)
+unsigned long env_offset = CFG_ENV_OFFSET_PATCHED;
+#elif defined(CFG_ENV_OFFSET_OOB)
+unsigned long env_offset = CFG_ENV_OFFSET_OOB;
+#endif
+
 /*
  * Handle HOSTS that have prepended
  * crap on symbol names, not TARGETS.

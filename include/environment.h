@@ -70,6 +70,10 @@
 #endif	/* CFG_ENV_IS_IN_FLASH */
 
 #if defined(CFG_ENV_IS_IN_NAND)
+#if defined(CFG_ENV_OFFSET_PATCHED) || defined(CFG_ENV_OFFSET_OOB)
+extern unsigned long env_offset;
+#define CFG_ENV_OFFSET env_offset
+#else
 # ifndef CFG_ENV_OFFSET
 #  error "Need to define CFG_ENV_OFFSET when using CFG_ENV_IS_IN_NAND"
 # endif
@@ -82,6 +86,7 @@
 # ifdef CFG_ENV_IS_EMBEDDED
 #  define ENV_IS_EMBEDDED	1
 # endif
+#endif /* CFG_ENV_NAND_PATCHED */
 #endif /* CFG_ENV_IS_IN_NAND */
 
 
