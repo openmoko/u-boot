@@ -112,25 +112,28 @@ static struct part_info *get_partition_nand(int idx)
 {
 	struct mtd_device *dev;
 	struct part_info *part;
+	struct list_head *dentry;
 	struct list_head *pentry;
 	int i;
 
 	if (mtdparts_init())
 		return NULL;
-	if (list_empty(&devices))
-		return NULL;
 
-	dev = list_entry(devices.next, struct mtd_device, link);
-	i = 0;
-	list_for_each(pentry, &dev->parts) {
-		if (i == idx)  {
-			part = list_entry(pentry, struct part_info, link);
-			return part;
+	list_for_each(dentry, &devices) {
+		dev = list_entry(dentry, struct mtd_device, link);
+		if (dev->id->type == MTD_DEV_TYPE_NAND) {
+			i = 0;
+			list_for_each(pentry, &dev->parts) {
+				if (i == idx)  {
+					part = list_entry(pentry,
+					    struct part_info, link);
+					return part;
+				}
+				i++;
+			}
+			return NULL;
 		}
-		i++;
 	}
-
-	return NULL;
 }
 
 #define LOAD_ADDR ((unsigned char *)0x32000000)

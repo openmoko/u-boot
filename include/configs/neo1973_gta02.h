@@ -100,6 +100,7 @@
 			/* CFG_CMD_HWFLOW	 | */ \
 #define CONFIG_CMD_SAVES
 #define CONFIG_CMD_NAND
+#define CONFIG_CMD_FLASH
 #define CONFIG_CMD_PORTIO
 #define CONFIG_CMD_MMC
 #define CONFIG_CMD_FAT
@@ -188,7 +189,7 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS 					\
 	"usbtty=cdc_acm\0"						\
-	"bootargs_base=rootfstype=jffs2 root=/dev/mtdblock5 console=ttySAC2,115200 console=tty0 loglevel=8\0" \
+	"bootargs_base=rootfstype=jffs2 root=/dev/mtdblock6 console=ttySAC2,115200 console=tty0 loglevel=8\0" \
 	""
 
 /*-----------------------------------------------------------------------
@@ -202,9 +203,6 @@
 /*-----------------------------------------------------------------------
  * FLASH and environment organization
  */
-
-/* No NOR flash in this device */
-#define CFG_NO_FLASH		1
 
 #define	CFG_ENV_IS_IN_NAND	1
 #define CFG_ENV_SIZE		0x40000	/* 128k Total Size of Environment Sector */
@@ -277,10 +275,14 @@
 #define CONFIG_DRIVER_PCF50633		1
 #define	CONFIG_RTC_PCF50633		1
 
-#define MTDIDS_DEFAULT	"nand0=neo1973-nand"
+#define MTDIDS_DEFAULT	"nor0=physmap-flash,nand0=neo1973-nand"
 //#define MTPARTS_DEFAULT	"neo1973-nand:256k(u-boot),128k(u-boot_env),8M(kernel),640k(splash),256k(factory),-(rootfs)"
+#define CFG_MTDPARTS_PREFIX "physmap-flash:-(nor);"
 #define CFG_NAND_DYNPART_MTD_KERNEL_NAME "neo1973-nand"
 #define CONFIG_NAND_DYNPART
+
+#define CFG_MAX_FLASH_BANKS 1
+#define CFG_MAX_FLASH_SECT 1
 
 #define DFU_NUM_ALTERNATES	7
 
