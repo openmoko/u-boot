@@ -106,6 +106,16 @@ _booted_from_nand:
 	.word	booted_from_nand
 #endif /* CONFIG_S3C2410_NAND_BOOT */
 
+#ifndef CFG_NO_FLASH
+.globl booted_from_nor
+booted_from_nor:
+	.word	0
+_booted_from_nor:
+	.word	booted_from_nor
+_end_if_0:
+	.word	__bss_start-_start
+#endif /* !CFG_NO_FLASH */
+
 _TEXT_BASE:
 	.word	TEXT_BASE
 
@@ -387,6 +397,15 @@ copy_loop:
 	stmia	r1!, {r3-r10}		/* copy to   target address [r1]    */
 	cmp	r0, r2			/* until source end address [r2]    */
 	ble	copy_loop
+
+#ifndef CFG_NO_FLASH
+	ldr	r0, _end_if_0		/* are we booting from NOR ? */
+	cmp	r0, r2
+	ldreq	r0, _booted_from_nor	/* remember that we've booted from  */
+	moveq	r1, #1			/* NOR                              */
+	streqb	r1, [r0]
+#endif /* !CFG_NO_FLASH */
+
 	mov	r0, #0			/* flush v3/v4 cache */
 	mcr	p15, 0, r0, c7, c7, 0
 	ldr	pc, _done_relocate	/* jump to relocated code */
