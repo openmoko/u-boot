@@ -70,4 +70,10 @@
 #define STR_CTRL_INTERFACE	0x06
 #define STR_COUNT		0x07
 
+#ifdef CONFIG_USBD_DFU
+#define NUM_STRINGS		DFU_STR_COUNT
+#else
+#define NUM_STRINGS		STR_COUNT
+#endif
+
 #endif

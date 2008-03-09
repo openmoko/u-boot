@@ -24,6 +24,9 @@
 #
 # download area is 3200'0000 or 3300'0000
 
+CONFIG_USB_DFU_VENDOR=0x1457
+CONFIG_USB_DFU_PRODUCT=0x5119
+
 sinclude $(OBJTREE)/board/$(BOARDDIR)/config.tmp
 
 ifeq ($(GTA01_BIG_RAM),y)

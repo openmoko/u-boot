@@ -28,6 +28,7 @@ LIB 	:= $(obj)libusb.a
 COBJS-y += isp116x-hcd.o
 COBJS-y += sl811_usb.o
 COBJS-y += usb_ohci.o
+COBJS-y += usbdfu.o
 COBJS-y += usbdcore.o
 COBJS-y += usbdcore_ep0.o
 COBJS-y += usbdcore_mpc8xx.o

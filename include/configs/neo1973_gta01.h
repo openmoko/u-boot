@@ -159,7 +159,7 @@
  */
 #define CONFIG_STACKSIZE	(128*1024)	/* regular stack */
 #ifdef CONFIG_USE_IRQ
-#define CONFIG_STACKSIZE_IRQ	(4*1024)	/* IRQ stack */
+#define CONFIG_STACKSIZE_IRQ	(8*1024)	/* IRQ stack */
 #define CONFIG_STACKSIZE_FIQ	(4*1024)	/* FIQ stack */
 #endif
 
@@ -176,6 +176,10 @@
 #define CONFIG_USBD_MANUFACTURER	"OpenMoko, Inc"
 #define CONFIG_USBD_PRODUCT_NAME	"Neo1973 Bootloader " U_BOOT_VERSION
 #define CONFIG_EXTRA_ENV_SETTINGS 	"usbtty=cdc_acm\0"
+#define CONFIG_USBD_DFU			1
+#define CONFIG_USBD_DFU_XFER_SIZE 	4096	/* 0x4000 */
+#define CONFIG_USBD_DFU_INTERFACE	2
+
 
 /*-----------------------------------------------------------------------
  * Physical Memory Map

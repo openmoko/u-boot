@@ -31,6 +31,7 @@
 
 #include <malloc.h>
 #include "usbdcore.h"
+#include <usb_dfu.h>
 
 #define MAX_INTERFACES 2
 
@@ -212,6 +213,10 @@ struct usb_alternate_instance *usbd_device_alternate_instance (struct usb_device
  */
 struct usb_device_descriptor *usbd_device_device_descriptor (struct usb_device_instance *device, int port)
 {
+#ifdef CONFIG_USBD_DFU
+	if (device->dfu_state != DFU_STATE_appIDLE)
+		return device->dfu_dev_desc;
+#endif
 	return (device->device_descriptor);
 }
 
@@ -232,6 +237,10 @@ struct usb_configuration_descriptor *usbd_device_configuration_descriptor (struc
 	if (!(configuration_instance = usbd_device_configuration_instance (device, port, configuration))) {
 		return NULL;
 	}
+#ifdef CONFIG_USBD_DFU
+	if (device->dfu_state != DFU_STATE_appIDLE)
+		return (&device->dfu_cfg_desc->ucfg);
+#endif
 	return (configuration_instance->configuration_descriptor);
 }
 
@@ -253,6 +262,13 @@ struct usb_interface_descriptor *usbd_device_interface_descriptor (struct usb_de
 	if (!(interface_instance = usbd_device_interface_instance (device, port, configuration, interface))) {
 		return NULL;
 	}
+#ifdef CONFIG_USBD_DFU
+	if (device->dfu_state != DFU_STATE_appIDLE) {
+		if (alternate < 0 || alternate >= DFU_NUM_ALTERNATES)
+			return NULL;
+		return &device->dfu_cfg_desc->uif[alternate];
+	}
+#endif
 	if ((alternate < 0) || (alternate >= interface_instance->alternates)) {
 		return NULL;
 	}
@@ -681,4 +697,7 @@ void usbd_device_event_irq (struct usb_device_instance *device, usb_device_event
 		/* usbdbg("calling device->event"); */
 		device->event(device, event, data);
 	}
+#ifdef CONFIG_USBD_DFU
+	dfu_event(device, event, data);
+#endif
 }

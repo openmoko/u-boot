@@ -51,9 +51,14 @@
  */
 
 #include <common.h>
+DECLARE_GLOBAL_DATA_PTR;
 
 #if defined(CONFIG_USB_DEVICE)
 #include "usbdcore.h"
+
+#ifdef CONFIG_USBD_DFU
+#include <usb_dfu.h>
+#endif
 
 #if 0
 #define dbg_ep0(lvl,fmt,args...) serial_printf("[%s] %s:%d: "fmt"\n",__FILE__,__FUNCTION__,__LINE__,##args)
@@ -273,7 +278,24 @@ static int ep0_get_descriptor (struct usb_device_instance *device,
 	case USB_DESCRIPTOR_TYPE_ENDPOINT:
 		serial_printf("USB_DESCRIPTOR_TYPE_ENDPOINT - error not implemented\n");
 		return -1;
+	/* This really means "Class Specific Descriptor #1 == USB_DT_DFU */
 	case USB_DESCRIPTOR_TYPE_HID:
+#ifdef CONFIG_USBD_DFU
+		{
+			int bNumInterface =
+				le16_to_cpu(urb->device_request.wIndex);
+
+			/* In runtime mode, we only respond to the DFU INTERFACE,
+			 * whereas in DFU mode, we respond for all intrfaces */
+			if (device->dfu_state != DFU_STATE_appIDLE &&
+			    device->dfu_state != DFU_STATE_appDETACH ||
+			    bNumInterface == CONFIG_USBD_DFU_INTERFACE) {
+				urb->buffer = &device->dfu_cfg_desc->func_dfu;
+				urb->actual_length = sizeof(struct usb_dfu_func_descriptor);
+			} else
+				return -1;
+		}
+#else /* CONFIG_USBD_DFU */
 		{
 			serial_printf("USB_DESCRIPTOR_TYPE_HID - error not implemented\n");
 			return -1;	/* unsupported at this time */
@@ -301,6 +323,7 @@ static int ep0_get_descriptor (struct usb_device_instance *device,
 				     max);
 #endif
 		}
+#endif /* CONFIG_USBD_DFU */
 		break;
 	case USB_DESCRIPTOR_TYPE_REPORT:
 		{
@@ -402,6 +425,24 @@ int ep0_recv_setup (struct urb *urb)
 		 le16_to_cpu (request->wValue), le16_to_cpu (request->wIndex),
 		 le16_to_cpu (request->wLength),
 		 USBD_DEVICE_REQUESTS (request->bRequest));
+
+#ifdef CONFIG_USBD_DFU
+	if ((request->bmRequestType & 0x3f) == USB_TYPE_DFU &&
+	     (device->dfu_state != DFU_STATE_appIDLE ||
+	      le16_to_cpu(request->wIndex) == CONFIG_USBD_DFU_INTERFACE)) {
+		int rc = dfu_ep0_handler(urb);
+		switch (rc) {
+		case DFU_EP0_NONE:
+		case DFU_EP0_UNHANDLED:
+			break;
+		case DFU_EP0_ZLP:
+		case DFU_EP0_DATA:
+			return 0;
+		case DFU_EP0_STALL:
+			return -1;
+		}
+	}
+#endif /* CONFIG_USB_DFU */
 
 	/* handle USB Standard Request (c.f. USB Spec table 9-2) */
 	if ((request->bmRequestType & USB_REQ_TYPE_MASK) != 0) {
@@ -590,7 +631,8 @@ int ep0_recv_setup (struct urb *urb)
 			device->interface = le16_to_cpu (request->wIndex);
 			device->alternate = le16_to_cpu (request->wValue);
 			/*dbg_ep0(2, "set interface: %d alternate: %d", device->interface, device->alternate); */
-			serial_printf ("DEVICE_SET_INTERFACE.. event?\n");
+			usbd_device_event_irq(device, DEVICE_SET_INTERFACE,
+						(request->wIndex << 16 | request->wValue));
 			return 0;
 
 		case USB_REQ_GET_STATUS:

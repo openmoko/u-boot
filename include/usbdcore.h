@@ -33,6 +33,7 @@
 
 #include <common.h>
 #include "usbdescriptors.h"
+#include <usb_dfu_descriptors.h>
 
 
 #define MAX_URBS_QUEUED 5
@@ -475,7 +476,11 @@ typedef struct urb_link {
  * function driver to inform it that data has arrived.
  */
 
+#ifdef CONFIG_USBD_DFU
+#define URB_BUF_SIZE (128+CONFIG_USBD_DFU_XFER_SIZE)
+#else
 #define URB_BUF_SIZE 128 /* in linux we'd malloc this, but in u-boot we prefer static data */
+#endif
 struct urb {
 
 	struct usb_endpoint_instance *endpoint;
@@ -603,6 +608,12 @@ struct usb_device_instance {
 	unsigned long usbd_rxtx_timestamp;
 	unsigned long usbd_last_rxtx_timestamp;
 
+#ifdef CONFIG_USBD_DFU
+	const struct usb_device_descriptor *dfu_dev_desc;
+	const struct _dfu_desc *dfu_cfg_desc;
+	enum dfu_state dfu_state;
+	u_int8_t dfu_status;
+#endif
 };
 
 /* Bus Interface configuration structure
@@ -631,6 +642,8 @@ extern char *usbd_device_states[];
 extern char *usbd_device_status[];
 extern char *usbd_device_requests[];
 extern char *usbd_device_descriptors[];
+
+extern struct usb_string_descriptor **usb_strings;
 
 void urb_link_init (urb_link * ul);
 void urb_detach (struct urb *urb);

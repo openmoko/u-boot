@@ -293,6 +293,12 @@ $(obj)u-boot.srec:	$(obj)u-boot
 $(obj)u-boot.bin:	$(obj)u-boot
 		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
 
+$(obj)u-boot.udfu:	$(obj)u-boot.bin
+		./tools/mkudfu -v $(CONFIG_USB_DFU_VENDOR) \
+			       -p $(CONFIG_USB_DFU_PRODUCT) \
+			       -r $(CONFIG_USB_DFU_REVISION) \
+			       -d $< $@
+
 $(obj)u-boot.img:	$(obj)u-boot.bin
 		./tools/mkimage -A $(ARCH) -T firmware -C none \
 		-a $(TEXT_BASE) -e 0 \

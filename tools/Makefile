@@ -21,10 +21,10 @@
 # MA 02111-1307 USA
 #
 
-BIN_FILES	= img2srec$(SFX) mkimage$(SFX) envcrc$(SFX) ubsha1$(SFX) gen_eth_addr$(SFX) bmp_logo$(SFX)
+BIN_FILES	= img2srec$(SFX) mkimage$(SFX) envcrc$(SFX) ubsha1$(SFX) gen_eth_addr$(SFX) bmp_logo$(SFX) mkudfu$(SFX)
 
 OBJ_LINKS	= environment.o crc32.o sha1.o
-OBJ_FILES	= img2srec.o mkimage.o envcrc.o ubsha1.o gen_eth_addr.o bmp_logo.o
+OBJ_FILES	= img2srec.o mkimage.o envcrc.o ubsha1.o gen_eth_addr.o bmp_logo.o mkudfu.o
 
 ifeq ($(ARCH),mips)
 BIN_FILES	+= inca-swap-bytes$(SFX)
@@ -138,6 +138,10 @@ $(obj)img2srec$(SFX):	$(obj)img2srec.o
 		$(STRIP) $@
 
 $(obj)mkimage$(SFX):	$(obj)mkimage.o $(obj)crc32.o
+		$(CC) $(CFLAGS) $(HOST_LDFLAGS) -o $@ $^
+		$(STRIP) $@
+
+$(obj)mkudfu$(SFX):	$(obj)mkudfu.o
 		$(CC) $(CFLAGS) $(HOST_LDFLAGS) -o $@ $^
 		$(STRIP) $@
 
