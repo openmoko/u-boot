@@ -678,7 +678,8 @@ static int check_create (struct mtd_info *mtd, uint8_t *buf, struct nand_bbt_des
 		}
 create:
 		/* Create the bad block table by scanning the device ? */
-		if (!(td->options & NAND_BBT_CREATE))
+		if (!(td->options & NAND_BBT_CREATE) ||
+		  (this->options & NAND_DONT_CREATE_BBT))
 			continue;
 
 		/* Create the table in memory by scanning the chip(s) */

@@ -165,7 +165,7 @@ int __board_nand_init(struct nand_chip *nand)
 #endif
 
 #ifdef CONFIG_S3C2410_NAND_BBT
-	nand->options = NAND_USE_FLASH_BBT;
+	nand->options = NAND_USE_FLASH_BBT | NAND_DONT_CREATE_BBT;
 #else
 	nand->options = 0;
 #endif
