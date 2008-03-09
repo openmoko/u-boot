@@ -686,8 +686,8 @@ void usbd_tx_complete (struct usb_endpoint_instance *endpoint);
 
 enum usbd_event {
 	UDC_CTRL_PULLUP_ENABLE,
+	UDC_CTRL_500mA_ENABLE,
 };
 
 void udc_ctrl(enum usbd_event event, int param);
-#endif
 #endif

@@ -2,6 +2,7 @@
 #include <common.h>
 #include <usbdcore.h>
 #include <s3c2410.h>
+#include <pcf50606.h>
 
 void udc_ctrl(enum usbd_event event, int param)
 {
@@ -15,6 +16,13 @@ void udc_ctrl(enum usbd_event event, int param)
 			gpio->GPBDAT |= (1 << 9);
 		else
 			gpio->GPBDAT &= ~(1 << 9);
+#endif
+		break;
+	case UDC_CTRL_500mA_ENABLE:
+#if defined(CONFIG_ARCH_GTA01_v3) || defined(CONFIG_ARCH_GTA01_v4) || \
+    defined(CONFIG_ARCH_GTA01B_v2) || defined(CONFIG_ARCH_GTA01B_v3) || \
+    defined(CONFIG_ARCH_GTA01B_v4)
+		pcf50606_charge_autofast(param);
 #endif
 		break;
 	default:
