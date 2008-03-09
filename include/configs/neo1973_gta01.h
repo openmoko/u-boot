@@ -82,6 +82,7 @@
 #define CONFIG_CMD_ENV
 #define CONFIG_CMD_BOOTD
 #define CONFIG_CMD_CONSOLE
+#define CONFIG_CMD_BMP
 #define CONFIG_CMD_ASKENV
 #define CONFIG_CMD_RUN
 #define CONFIG_CMD_ECHO
@@ -239,12 +240,15 @@
 /* we have a board_late_init() function */
 #define BOARD_LATE_INIT			1
 
-#if 1
 #define CONFIG_VIDEO
 #define CONFIG_VIDEO_S3C2410
 #define CONFIG_CFB_CONSOLE
 #define CONFIG_VIDEO_LOGO
+#define CONFIG_SPLASH_SCREEN
+#define CFG_VIDEO_LOGO_MAX_SIZE		(640*480+1024+100) /* 100 = slack */
+#define CONFIG_VIDEO_BMP_GZIP
 #define CONFIG_VGA_AS_SINGLE_DEVICE
+#define CONFIG_CMD_UNZIP
 
 #define VIDEO_FB_16BPP_PIXEL_SWAP
 
@@ -253,7 +257,6 @@
 #define VIDEO_GETC_FCT		serial_getc
 
 #define LCD_VIDEO_ADDR		0x33d00000
-#endif
 
 #define CONFIG_S3C2410_NAND_BBT                1
 #define CONFIG_S3C2410_NAND_HWECC              1

@@ -195,6 +195,7 @@ CONFIG_VIDEO_HW_CURSOR:	     - Uses the hardware cursor capability of the
 #if defined(CONFIG_CMD_BMP) || defined(CONFIG_SPLASH_SCREEN)
 #include <watchdog.h>
 #include <bmp_layout.h>
+#include <asm/byteorder.h>
 #endif
 
 /*****************************************************************************/
