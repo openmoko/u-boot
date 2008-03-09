@@ -150,3 +150,9 @@ int dram_init (void)
 
 	return 0;
 }
+
+unsigned int dynpart_size[] = {
+    CFG_UBOOT_SIZE, 0x4000, 0x200000, 0xa0000, 0x3d5c000-CFG_UBOOT_SIZE, 0 };
+char *dynpart_names[] = {
+    "u-boot", "u-boot_env", "kernel", "splash", "rootfs", NULL };
+

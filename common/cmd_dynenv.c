@@ -60,7 +60,7 @@ int do_dynenv(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		buf[2] = 'V';
 		buf[3] = '0';
 
-		if (arg_off_size(argc-2, argv+2, mtd, &addr, &dummy) < 0) {
+		if (arg_off_size(argc-2, argv+2, mtd, &addr, &dummy, 1) < 0) {
 			printf("Offset or partition name expected\n");
 			goto fail;
 		}

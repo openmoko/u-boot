@@ -494,3 +494,14 @@ void neo1973_led(int led, int on)
 }
 
 
+
+/* The sum of all part_size[]s must equal to the NAND size, i.e., 0x4000000.
+   "initrd" is sized such that it can hold two uncompressed 16 bit 640*480
+   images: 640*480*2*2 = 1228800 < 1245184. */
+
+unsigned int dynpart_size[] = {
+    CFG_UBOOT_SIZE, 0x4000, 0x200000, 0xa0000, 0x3d5c000-CFG_UBOOT_SIZE, 0 };
+char *dynpart_names[] = {
+    "u-boot", "u-boot_env", "kernel", "splash", "rootfs", NULL };
+
+

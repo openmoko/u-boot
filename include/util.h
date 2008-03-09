@@ -28,6 +28,6 @@
 
 /* common/cmd_nand.c */
 int arg_off_size(int argc, char *argv[], nand_info_t *nand, ulong *off,
-  ulong *size);
+  ulong *size, int net);
 
 #endif /* UTIL_H */

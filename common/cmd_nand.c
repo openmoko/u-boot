@@ -93,7 +93,7 @@ static inline int str2long(char *p, ulong *num)
 }
 
 int
-arg_off_size(int argc, char *argv[], nand_info_t *nand, ulong *off, ulong *size)
+arg_off_size(int argc, char *argv[], nand_info_t *nand, ulong *off, ulong *size, int net)
 {
 	int idx = nand_curr_device;
 #if defined(CONFIG_CMD_JFFS2) && defined(CONFIG_JFFS2_CMDLINE)
@@ -114,10 +114,17 @@ arg_off_size(int argc, char *argv[], nand_info_t *nand, ulong *off, ulong *size)
 					printf("'%s' is not a number\n", argv[1]);
 					return -1;
 				}
-				if (*size > part->size)
-					*size = part->size;
+				if (*size > part->size) {
+					if (net)
+						*size = nand_net_part_size(part);
+					else
+						*size = part->size;
+				}
 			} else {
-				*size = part->size;
+				if (net)
+					*size = nand_net_part_size(part);
+				else
+					*size = part->size;
 			}
 			idx = dev->id->num;
 			*nand = nand_info[idx];
@@ -257,7 +264,7 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 
 		printf("\nNAND %s: ", scrub ? "scrub" : "erase");
 		/* skip first two or three arguments, look for offset and size */
-		if (arg_off_size(argc - o, argv + o, nand, &off, &size) != 0)
+		if (arg_off_size(argc - o, argv + o, nand, &off, &size, 0) != 0)
 			return 1;
 
 		memset(&opts, 0, sizeof(opts));
@@ -319,7 +326,7 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 
 		read = strncmp(cmd, "read", 4) == 0; /* 1 = read, 0 = write */
 		printf("\nNAND %s: ", read ? "read" : "write");
-		if (arg_off_size(argc - 3, argv + 3, nand, &off, &size) != 0)
+		if (arg_off_size(argc - 3, argv + 3, nand, &off, &size, 1) != 0)
 			return 1;
 
 		s = strchr(cmd, '.');
@@ -441,7 +448,7 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 	}
 
 	if (strcmp(cmd, "unlock") == 0) {
-		if (arg_off_size(argc - 2, argv + 2, nand, &off, &size) < 0)
+		if (arg_off_size(argc - 2, argv + 2, nand, &off, &size, 0) < 0)
 			return 1;
 
 		if (!nand_unlock(nand, off, size)) {
