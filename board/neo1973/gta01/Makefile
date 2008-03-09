@@ -37,7 +37,7 @@ $(LIB):	$(OBJS) $(SOBJS)
 	$(AR) crv $@ $(OBJS) $(SOBJS)
 
 lowlevel_foo.o:	../common/lowlevel_foo.S
-	$(CC) -c -DTEXT_BASE=0x33F80000 -march=armv4 \
+	$(CC) -c -DTEXT_BASE=0x33F80000 -march=armv4t \
 	  -o lowlevel_foo.o ../common/lowlevel_foo.S
 
 lowlevel_foo:	lowlevel_foo.o ../common/lowlevel_init.o ../common/lowlevel_foo.lds
