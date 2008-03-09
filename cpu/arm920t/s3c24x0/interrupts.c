@@ -30,13 +30,16 @@
  */
 
 #include <common.h>
-#if defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) || defined (CONFIG_TRAB)
+#if defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) || \
+    defined(CONFIG_S3C2440) || defined (CONFIG_TRAB)
 
 #include <arm920t.h>
 #if defined(CONFIG_S3C2400)
 #include <s3c2400.h>
 #elif defined(CONFIG_S3C2410)
 #include <s3c2410.h>
+#elif defined(CONFIG_S3C2440)
+#include <s3c2440.h>
 #endif
 
 int timer_load_val = 0;
@@ -59,6 +62,7 @@ int interrupt_init (void)
 	/* use PWM Timer 4 because it has no output */
 	/* prescaler for Timer 4 is 16 */
 	timers->TCFG0 = 0x0f00;
+#ifndef CONFIG_S3C2440
 	if (timer_load_val == 0)
 	{
 		/*
@@ -68,6 +72,9 @@ int interrupt_init (void)
 		 */
 		timer_load_val = get_PCLK()/(2 * 16 * 100);
 	}
+#else
+	timer_load_val = get_PCLK()/(2 * 16 * 100);
+#endif
 	/* load value for 10 ms timeout */
 	lastdec = timers->TCNTB4 = timer_load_val;
 	/* auto load, manual update of Timer 4 */
@@ -178,6 +185,7 @@ ulong get_tbclk (void)
 	tbclk = timer_load_val * 100;
 #elif defined(CONFIG_SBC2410X) || \
       defined(CONFIG_SMDK2410) || \
+      defined(CONFIG_SMDK2440) || \
       defined(CONFIG_VCMA9)
 	tbclk = CFG_HZ;
 #else
@@ -232,4 +240,5 @@ void s3c2410_irq(void)
 }
 #endif /* USE_IRQ */
 
-#endif /* defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) || defined (CONFIG_TRAB) */
+#endif /* defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) ||
+	  defined(CONFIG_S3C2440) || defined (CONFIG_TRAB) */

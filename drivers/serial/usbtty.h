@@ -29,7 +29,7 @@
 #include "usbdcore_mpc8xx.h"
 #elif defined(CONFIG_OMAP1510)
 #include "usbdcore_omap1510.h"
-#elif defined(CONFIG_S3C2410)
+#elif defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
 #include "usbdcore_s3c2410.h"
 #endif
 

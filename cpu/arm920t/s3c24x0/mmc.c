@@ -137,6 +137,9 @@ static int mmc_block_read(uchar *dst, ulong src, ulong len)
 	dcon |= S3C2410_SDIDCON_RXAFTERCMD|S3C2410_SDIDCON_XFER_RXSTART;
 	if (wide)
 		dcon |= S3C2410_SDIDCON_WIDEBUS;
+#if defined(CONFIG_S3C2440)
+	dcon |= S3C2440_SDIDCON_DS_WORD | S3C2440_SDIDCON_DATSTART;
+#endif
 	sdi->SDIDCON = dcon;
 
 	/* send read command */
@@ -394,13 +397,18 @@ int mmc_init(int verbose)
 
 	clk_power->CLKCON |= (1 << 9);
 
+	sdi->SDIBSIZE = 512;
+#if defined(CONFIG_S3C2410)
 	/* S3C2410 has some bug that prevents reliable operation at higher speed */
 	//sdi->SDIPRE = 0x3e;  /* SDCLK = PCLK/2 / (SDIPRE+1) = 396kHz */
-	sdi->SDIPRE = 0x02;  /* SDCLK = PCLK/2 / (SDIPRE+1) = 396kHz */
-	sdi->SDIBSIZE = 512;
+	sdi->SDIPRE = 0x02;  /* 2410: SDCLK = PCLK/2 / (SDIPRE+1) = 11MHz */
 	sdi->SDIDTIMER = 0xffff;
+#elif defined(CONFIG_S3C2440)
+	sdi->SDIPRE = 0x05;  /* 2410: SDCLK = PCLK / (SDIPRE+1) = 11MHz */
+	sdi->SDIDTIMER = 0x7fffff;
+#endif
 	sdi->SDIIMSK = 0x0;
-	sdi->SDICON = S3C2410_SDICON_FIFORESET|S3C2440_SDICON_MMCCLOCK;
+	sdi->SDICON = S3C2410_SDICON_FIFORESET|S3C2410_SDICON_CLOCKTYPE;
 	udelay(125000); /* FIXME: 74 SDCLK cycles */
 
 	mmc_csd.c_size = 0;

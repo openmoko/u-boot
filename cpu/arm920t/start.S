@@ -31,7 +31,11 @@
 
 #include <config.h>
 #include <version.h>
+#if defined(CONFIG_S3C2410)
 #include <s3c2410.h>
+#elif defined(CONFIG_S3C2440)
+#include <s3c2440.h>
+#endif
 #include <status_led.h>
 
 /*
@@ -166,19 +170,37 @@ copyex:
 	bne	copyex
 #endif
 
-#if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410)
+#if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
 	/* turn off the watchdog */
 
 # if defined(CONFIG_S3C2400)
 #  define pWTCON		0x15300000
 #  define INTMSK		0x14400008	/* Interupt-Controller base addresses */
 #  define CLKDIVN	0x14800014	/* clock divisor register */
-#else
+#elif defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
 #  define pWTCON		0x53000000
 #  define INTMSK		0x4A000008	/* Interupt-Controller base addresses */
 #  define INTSUBMSK	0x4A00001C
 #  define CLKDIVN	0x4C000014	/* clock divisor register */
 # endif
+
+#if defined(CONFIG_S3C2410)
+# define INTSUBMSK_val	0x7ff
+# define MPLLCON_val	((0x90 << 12) + (0x7 << 4) + 0x0)	/* 202 MHz */
+# define UPLLCON_val	((0x78 << 12) + (0x2 << 4) + 0x3)
+# define CLKDIVN_val	3 /* FCLK:HCLK:PCLK = 1:2:4 */
+#elif defined(CONFIG_S3C2440)
+# define INTSUBMSK_val	0xffff
+#if (CONFIG_SYS_CLK_FREQ == 16934400)
+# define MPLLCON_val	((0x61 << 12) + (0x1 << 4) + 0x2)	/* 296.35 MHz */
+# define UPLLCON_val	((0x3c << 12) + (0x4 << 4) + 0x2)	/*  47.98 MHz */
+#else if (CONFIG_SYS_CLK_FREQ == 12000000)
+# define MPLLCON_val	((0x44 << 12) + (0x1 << 4) + 0x1)	/* 304.00 MHz */
+# define UPLLCON_val	((0x38 << 12) + (0x2 << 4) + 0x2)	/*  48.00 MHz */
+#endif
+# define CLKDIVN_val	7 /* FCLK:HCLK:PCLK = 1:3:6 */
+# define CAMDIVN	0x4C000018
+#endif
 
 	ldr     r0, =pWTCON
 	mov     r1, #0x0
@@ -190,24 +212,34 @@ copyex:
 	mov	r1, #0xffffffff
 	ldr	r0, =INTMSK
 	str	r1, [r0]
-# if defined(CONFIG_S3C2410)
-	ldr	r1, =0x3ff
+# if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+	ldr	r1, =INTSUBMSK_val
 	ldr	r0, =INTSUBMSK
 	str	r1, [r0]
 # endif
 
-	/* default FCLK is 202 MHz ! */
+#if defined(CONFIG_S3C2440)
+	/* Make sure we get FCLK:HCLK:PCLK = 1:3:6 */
+	ldr	r0, =CAMDIVN
+	mov	r1, #0
+	str	r1, [r0]
+#endif
+
+	/* Clock asynchronous mode */
+	mrc	p15, 0, r1, c1, c0, 0
+	orr	r1, r1, #0xc0000000
+	mcr	p15, 0, r1, c1, c0, 0
+
+
 #define LOCKTIME	0x4c000000
 #define UPLLCON		0x4c000008
-//#define MPLLCFG		((0x90 << 12) + (0x2 << 4) + 0x2)
-#define MPLLCFG		((0x90 << 12) + (0x7 << 4) + 0x0)
-#define UPLLCFG		((0x78 << 12) + (0x2 << 4) + 0x3)
+
 	ldr	r0, =LOCKTIME
 	mov	r1, #0xffffff
 	str	r1, [r0]
 
 	ldr	r0, =UPLLCON
-	ldr	r1, =UPLLCFG
+	ldr	r1, =UPLLCON_val
 	str	r1, [r0]
 
 	/* Page 7-19, seven nops between UPLL and MPLL */
@@ -219,12 +251,12 @@ copyex:
 	nop
 	nop
 
-	ldr	r1, =MPLLCFG
+	ldr	r1, =MPLLCON_val
 	str	r1, [r0, #-4]		/* MPLLCON */
 
 	/* FCLK:HCLK:PCLK = 1:2:4 */
 	ldr	r0, =CLKDIVN
-	mov	r1, #3
+	mov	r1, #CLKDIVN_val
 	str	r1, [r0]
 
 #if 1
@@ -252,14 +284,15 @@ copyex:
 	str	r1, [r0, #0x28]
 #endif
 
-#endif	/* CONFIG_S3C2400 || CONFIG_S3C2410 */
+#endif	/* CONFIG_S3C2400 || CONFIG_S3C2410 || CONFIG_S3C2440 */
 
 #ifndef CONFIG_SKIP_LOWLEVEL_INIT
 #ifndef CONFIG_LL_INIT_NAND_ONLY
 	bl	cpu_init_crit
 #endif
 
-#if defined(CONFIG_AT91RM9200) || defined(CONFIG_S3C2410)
+#if defined(CONFIG_AT91RM9200) || defined(CONFIG_S3C2410) || \
+    defined(CONFIG_S3C2440)
 
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
 	adr	r0, _start		/* r0 <- current position of code   */
@@ -305,6 +338,7 @@ nand_load:
 	bl	may_resume		/* low-level setup and resume */
 
 	@ reset NAND
+#if defined(CONFIG_S3C2410)
 	mov	r1, #S3C2410_NAND_BASE
 	ldr	r2, =0xf842		@ initial value enable tacls=3,rph0=6,rph1=0
 	str	r2, [r1, #oNFCONF]
@@ -323,6 +357,17 @@ nand_load:
 	ldr	r2, [r1, #oNFCONF]
 	orr	r2, r2, #0x800		@ disable chip
 	str	r2, [r1, #oNFCONF]
+#elif defined(CONFIG_S3C2440)
+	mov	r1, #S3C2440_NAND_BASE
+	ldr	r2, =0xfff0		@ initial value tacls=3,rph0=7,rph1=7
+	ldr	r3, [r1, #oNFCONF]
+	orr	r3, r3, r2
+	str	r3, [r1, #oNFCONF]
+
+	ldr	r3, [r1, #oNFCONT]
+	orr	r3, r3, #1		@ enable nand controller
+	str	r3, [r1, #oNFCONT]
+#endif /* CONFIG_S3C2440 */
 
 	ldr	r0, _TEXT_BASE		/* upper 128 KiB: relocated uboot   */
 	sub	r0, r0, #CFG_MALLOC_LEN	/* malloc area                      */
@@ -385,7 +430,7 @@ done_nand_read:
 #endif /* CONFIG_S3C2410_NAND_BOOT */
 done_relocate:
 
-#if defined(CONFIG_USE_IRQ) && defined(CONFIG_S3C2410)
+#if defined(CONFIG_USE_IRQ) && (defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440))
 	/* In the case of the S3C2410, if we've somehow magically (JTAG, ...)
 	   ended up in RAM, then that ram is mapped to 0x30000000 and not 0.
 	   So we need to copy the interrupt vectors, etc.  */
@@ -502,7 +547,7 @@ may_resume:
 #if !defined(CONFIG_SKIP_LOWLEVEL_INIT) && defined(CONFIG_LL_INIT_NAND_ONLY)
 	bl	cpu_init_crit
 #endif
-#if defined(CONFIG_S3C2410)
+#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
 	/* ensure some refresh has happened */
 	ldr	r1, =0xfffff
 1:	subs	r1, r1, #1
@@ -513,7 +558,7 @@ may_resume:
 	ldr	r0, [ r1 ]
 	tst	r0, #0x02		/* is this resume from power down */
 	ldrne	pc, [r1, #4]		/* gstatus3 */
-#endif /* CONFIG_S3C2410 */
+#endif /* CONFIG_S3C2410 || CONFIG_S3C244 */
 #endif /* CONFIG_SKIP_LOWLEVEL_INIT */
 
 	mov	pc, r10
