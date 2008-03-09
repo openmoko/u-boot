@@ -3,6 +3,7 @@
 #include <usbdcore.h>
 #include <s3c2410.h>
 #include <pcf50606.h>
+#include <pcf50633.h>
 
 void udc_ctrl(enum usbd_event event, int param)
 {
@@ -11,7 +12,8 @@ void udc_ctrl(enum usbd_event event, int param)
 	switch (event) {
 	case UDC_CTRL_PULLUP_ENABLE:
 #if defined(CONFIG_ARCH_GTA01_v4) || defined(CONFIG_ARCH_GTA01B_v2) || \
-    defined(CONFIG_ARCH_GTA01B_v3) || defined(CONFIG_ARCH_GTA01B_v4)
+    defined(CONFIG_ARCH_GTA01B_v3) || defined(CONFIG_ARCH_GTA01B_v4) || \
+    defined(CONFIG_GTA02_REVISION)
 		if (param)
 			gpio->GPBDAT |= (1 << 9);
 		else
@@ -23,6 +25,11 @@ void udc_ctrl(enum usbd_event event, int param)
     defined(CONFIG_ARCH_GTA01B_v2) || defined(CONFIG_ARCH_GTA01B_v3) || \
     defined(CONFIG_ARCH_GTA01B_v4)
 		pcf50606_charge_autofast(param);
+#elif defined(CONFIG_GTA02_REVISION)
+		if (param)
+			pcf50633_usb_maxcurrent(500);
+		else
+			pcf50633_usb_maxcurrent(0);
 #endif
 		break;
 	default:

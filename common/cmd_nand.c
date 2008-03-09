@@ -204,8 +204,10 @@ int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 		putc('\n');
 		for (i = 0; i < CFG_MAX_NAND_DEVICE; i++) {
 			if (nand_info[i].name)
-				printf("Device %d: %s, sector size %lu KiB\n",
+				printf("Device %d: %s, page size %lu, "
+					"sector size %lu KiB\n",
 					i, nand_info[i].name,
+					nand_info[i].oobblock,
 					nand_info[i].erasesize >> 10);
 		}
 		return 0;
