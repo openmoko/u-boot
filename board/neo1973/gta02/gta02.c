@@ -64,6 +64,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #endif
 
 unsigned int neo1973_wakeup_cause;
+extern unsigned char booted_from_nand;
+extern unsigned char booted_from_nor;
 extern int nobootdelay;
 
 static inline void delay (unsigned long loops)
@@ -212,14 +214,23 @@ int board_init(void)
 	icache_enable();
 	dcache_enable();
 
+	/*
+	 * Since the NOR is replaced by SteppingStone when the AUX button is
+	 * released, we have to wait for this and copy our exception vectors
+	 * before we can let u-boot enable interrupts.
+	 */
+	if (booted_from_nor) {
+		extern char _start;
+
+		while (neo1973_aux_key_pressed());
+		memcpy((void *) 0, &_start, 0x40);
+	}
+
 	return 0;
 }
 
 int board_late_init(void)
 {
-	extern unsigned char booted_from_nand;
-	extern unsigned char booted_from_nor;
-
 	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
 	uint8_t int1, int2;
 	char buf[32];
