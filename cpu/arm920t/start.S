@@ -85,6 +85,13 @@ preboot_override:
 	.word	0
 #endif
 
+/* Must follow preboot_override , so we get a well-known address ! */
+#ifdef CFG_ENV_OVERRIDE
+.globl	env_override
+env_override:
+	.word	0
+#endif
+
 #ifdef CONFIG_S3C2410_NAND_BOOT
 .globl	booted_from_nand
 booted_from_nand:
