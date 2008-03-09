@@ -795,7 +795,8 @@ int nand_scan_bbt (struct mtd_info *mtd, struct nand_bbt_descr *bd)
 
 	len = mtd->size >> (this->bbt_erase_shift + 2);
 	/* Allocate memory (2bit per block) */
-	this->bbt = kmalloc (len, GFP_KERNEL);
+	if (!this->bbt)
+		this->bbt = kmalloc (len, GFP_KERNEL);
 	if (!this->bbt) {
 		printk (KERN_ERR "nand_scan_bbt: Out of memory\n");
 		return -ENOMEM;
