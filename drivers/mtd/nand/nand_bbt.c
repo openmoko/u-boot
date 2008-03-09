@@ -157,10 +157,6 @@ static int read_bbt (struct mtd_info *mtd, uint8_t *buf, int page, int num,
 					this->bbt[offs + (act >> 3)] |= 0x2 << (act & 0x06);
 					continue;
 				}
-				/* Leave it for now, if its matured we can move this
-				 * message to MTD_DEBUG_LEVEL0 */
-				printk (KERN_DEBUG "nand_read_bbt: Bad block at 0x%08x\n",
-					((offs << 2) + (act >> 1)) << this->bbt_erase_shift);
 				/* Factory marked bad or worn out ? */
 				if (tmp == 0)
 					this->bbt[offs + (act >> 3)] |= 0x3 << (act & 0x06);
@@ -229,14 +225,12 @@ static int read_abs_bbts (struct mtd_info *mtd, uint8_t *buf, struct nand_bbt_de
 	if (td->options & NAND_BBT_VERSION) {
 		nand_read_raw (mtd, buf, td->pages[0] << this->page_shift, mtd->oobblock, mtd->oobsize);
 		td->version[0] = buf[mtd->oobblock + td->veroffs];
-		printk (KERN_DEBUG "Bad block table at page %d, version 0x%02X\n", td->pages[0], td->version[0]);
 	}
 
 	/* Read the mirror version, if available */
 	if (md && (md->options & NAND_BBT_VERSION)) {
 		nand_read_raw (mtd, buf, md->pages[0] << this->page_shift, mtd->oobblock, mtd->oobsize);
 		md->version[0] = buf[mtd->oobblock + md->veroffs];
-		printk (KERN_DEBUG "Bad block table at page %d, version 0x%02X\n", md->pages[0], md->version[0]);
 	}
 
 	return 1;
@@ -374,8 +368,6 @@ static int search_bbt (struct mtd_info *mtd, uint8_t *buf, struct nand_bbt_descr
 	for (i = 0; i < chips; i++) {
 		if (td->pages[i] == -1)
 			printk (KERN_WARNING "Bad block table not found for chip %d\n", i);
-		else
-			printk (KERN_DEBUG "Bad block table found at page %d, version 0x%02X\n", td->pages[i], td->version[i]);
 	}
 	return 0;
 }
