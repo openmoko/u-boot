@@ -101,6 +101,42 @@ enum glamo_register_generic {
 	GLAMO_REG_PLL_GEN7	= 0x01f0,
 };
 
+enum glamo_reg_mem_dram1 {
+	GLAMO_MEM_DRAM1_EN_SDRAM_CLK	= (1 << 11),
+	GLAMO_MEM_DRAM1_SELF_REFRESH	= (1 << 12),
+};
+
+enum glamo_reg_mem_dram2 {
+	GLAMO_MEM_DRAM2_DEEP_PWRDOWN	= (1 << 12),
+};
+
+enum glamo_reg_clock51 {
+	GLAMO_CLOCK_GEN51_EN_DIV_MCLK	= 0x0001,
+	GLAMO_CLOCK_GEN51_EN_DIV_SCLK	= 0x0002,
+	GLAMO_CLOCK_GEN51_EN_DIV_JCLK	= 0x0004,
+	GLAMO_CLOCK_GEN51_EN_DIV_DCLK	= 0x0008,
+	GLAMO_CLOCK_GEN51_EN_DIV_DMCLK	= 0x0010,
+	GLAMO_CLOCK_GEN51_EN_DIV_DHCLK	= 0x0020,
+	GLAMO_CLOCK_GEN51_EN_DIV_GCLK	= 0x0040,
+	GLAMO_CLOCK_GEN51_EN_DIV_TCLK	= 0x0080,
+	/* FIXME: higher bits */
+};
+
+enum glamo_reg_hostbus2 {
+	GLAMO_HOSTBUS2_MMIO_EN_ISP	= 0x0001,
+	GLAMO_HOSTBUS2_MMIO_EN_JPEG	= 0x0002,
+	GLAMO_HOSTBUS2_MMIO_EN_MPEG	= 0x0004,
+	GLAMO_HOSTBUS2_MMIO_EN_LCD	= 0x0008,
+	GLAMO_HOSTBUS2_MMIO_EN_MMC	= 0x0010,
+	GLAMO_HOSTBUS2_MMIO_EN_MICROP0	= 0x0020,
+	GLAMO_HOSTBUS2_MMIO_EN_MICROP1	= 0x0040,
+	GLAMO_HOSTBUS2_MMIO_EN_CQ	= 0x0080,
+	GLAMO_HOSTBUS2_MMIO_EN_RISC	= 0x0100,
+	GLAMO_HOSTBUS2_MMIO_EN_2D	= 0x0200,
+	GLAMO_HOSTBUS2_MMIO_EN_3D	= 0x0400,
+};
+
+
 #define GLAMO_REG_HOSTBUS(x)	(GLAMO_REGOFS_HOSTBUS-2+(x*2))
 
 #define REG_MEM(x)		(GLAMO_REGOFS_MEMORY+(x))
@@ -330,6 +366,7 @@ enum glamo_reg_lcd {
 	GLAMO_REG_LCD_SRAM_DRIVING3	= REG_LCD(0x164),
 };
 
+
 enum glamo_reg_lcd_mode1 {
 	GLAMO_LCD_MODE1_PWRSAVE		= 0x0001,
 	GLAMO_LCD_MODE1_PARTIAL_PRT	= 0x0002,
@@ -380,6 +417,43 @@ enum glamo_reg_lcd_mode3 {
 	GLAMO_LCD_MODE3_9BITS		= 0x0020,
 	GLAMO_LCD_MODE3_16BITS		= 0x0030,
 	GLAMO_LCD_MODE3_18BITS		= 0x0040,
+};
+
+enum glamo_lcd_cmd_type {
+	GLAMO_LCD_CMD_TYPE_DISP		= 0x0000,
+	GLAMO_LCD_CMD_TYPE_PARALLEL	= 0x4000,
+	GLAMO_LCD_CMD_TYPE_SERIAL	= 0x8000,
+	GLAMO_LCD_CMD_TYPE_SERIAL_DIRECT= 0xc000,
+};
+#define GLAMO_LCD_CMD_TYPE_MASK		0xc000
+
+enum glamo_lcd_cmds {
+	GLAMO_LCD_CMD_DATA_DISP_FIRE	= 0x00,
+	GLAMO_LCD_CMD_DATA_DISP_SYNC	= 0x01,		/* RGB only */
+	/* switch to command mode, no display */
+	GLAMO_LCD_CMD_DATA_FIRE_NO_DISP	= 0x02,
+	/* display until VSYNC, switch to command */
+	GLAMO_LCD_CMD_DATA_FIRE_VSYNC	= 0x11,
+	/* display until HSYNC, switch to command */
+	GLAMO_LCD_CMD_DATA_FIRE_HSYNC	= 0x12,
+	/* display until VSYNC, 1 black frame, VSYNC, switch to command */
+	GLAMO_LCD_CMD_DATA_FIRE_VSYNC_B	= 0x13,
+	/* don't care about display and switch to command */
+	GLAMO_LCD_CMD_DATA_FIRE_FREE	= 0x14,		/* RGB only */
+	/* don't care about display, keep data display but disable data,
+	 * and switch to command */
+	GLAMO_LCD_CMD_DATA_FIRE_FREE_D	= 0x15,		/* RGB only */
+};
+
+enum glamo_reg_clock_2d {
+	GLAMO_CLOCK_2D_DG_GCLK		= 0x0001,
+	GLAMO_CLOCK_2D_EN_GCLK		= 0x0002,
+	GLAMO_CLOCK_2D_DG_M7CLK		= 0x0004,
+	GLAMO_CLOCK_2D_EN_M7CLK		= 0x0008,
+	GLAMO_CLOCK_2D_DG_M6CLK		= 0x0010,
+	GLAMO_CLOCK_2D_EN_M6CLK		= 0x0020,
+	GLAMO_CLOCK_2D_RESET		= 0x1000,
+	GLAMO_CLOCK_2D_CQ_RESET		= 0x2000,
 };
 
 #endif /* _GLAMO_REGS_H */

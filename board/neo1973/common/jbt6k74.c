@@ -95,6 +95,8 @@ static const char *jbt_state_names[] = {
 	[JBT_STATE_NORMAL]		= "normal",
 };
 
+#ifndef CONFIG_GTA02_REVISION
+
 #define GTA01_SCLK	(1 << 7) 	/* GPG7 */
 #define GTA01_MOSI	(1 << 6)	/* GPG6 */
 #define GTA01_MISO	(1 << 5)	/* GPG5 */
@@ -110,6 +112,20 @@ static const char *jbt_state_names[] = {
 
 #define SPI_SCL(bit)    if (bit) gpio->GPGDAT |=  GTA01_SCLK; \
 			else    gpio->GPGDAT &= ~GTA01_SCLK
+
+#else /* GTA02 */
+
+extern void smedia3362_spi_cs(int);
+extern void smedia3362_spi_sda(int);
+extern void smedia3362_spi_scl(int);
+extern void smedia3362_lcm_reset(int);
+
+#define SPI_CS(b)   smedia3362_spi_cs(b)
+#define SPI_SDA(b)  smedia3362_spi_sda(b)
+#define SPI_SCL(b)  smedia3362_spi_scl(b)
+
+#endif
+
 
 /* 150uS minimum clock cycle, we have two of this plus our other
  * instructions */
@@ -298,6 +314,8 @@ static int sleep_to_normal(struct jbt_info *jbt)
 	/* Sleep mode off */
 	rc |= jbt_reg_write_nodata(jbt, JBT_REG_SLEEP_OUT);
 
+	/* at this point we have like 50% grey */
+
 	/* initialize register set */
 	rc |= jbt_init_regs(jbt);
 	return rc;
@@ -392,13 +410,16 @@ int jbt6k74_init(void)
 {
 	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
 
+#ifndef CONFIG_GTA02_REVISION
 	/* initialize SPI for GPIO bitbang */
 	gpio->GPGCON &= 0xffff033f;
 	gpio->GPGCON |= 0x00005440;
 
 	/* get LCM out of reset */
 	gpio->GPCDAT |= (1 << 6);
-
+#else /* GTA02 */
+	smedia3362_lcm_reset(1);
+#endif
 	/* according to data sheet: wait 50ms (Tpos of LCM). However, 50ms
 	 * seems unreliable with later LCM batches, increasing to 90ms */
 	udelay(90000);

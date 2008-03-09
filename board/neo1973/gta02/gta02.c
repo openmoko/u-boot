@@ -190,6 +190,14 @@ int board_init(void)
 	gpio->GPJDAT |= (1 << 4) | (1 << 6);
 					/* Set GPJ4 to high (nGSM_EN) */
 					/* Set GPJ6 to high (nDL_GSM) */
+	gpio->GPJDAT &= ~(1 << 5);	/* Set GPJ5 to low 3D RST */
+	gpio->GPJDAT &= ~(1 << 5);	/* Set GPJ5 to low 3D RST */
+
+	/* leaving Glamo forced to Reset# active here killed
+	 * U-Boot when you touched the memory region
+	 */
+
+	gpio->GPJDAT |= (1 << 5);	/* Set GPJ5 to high 3D RST */
 #else
 #error Please define GTA02 version
 #endif
@@ -227,7 +235,7 @@ int board_late_init(void)
 
 	/* issue a short pulse with the vibrator */
 	neo1973_vibrator(1);
-	udelay(50000);
+	udelay(20000);
 	neo1973_vibrator(0);
 
 #if defined(CONFIG_ARCH_GTA02_v1)
@@ -237,10 +245,6 @@ int board_late_init(void)
 	udelay(50*1000);
 	pcf50633_reg_write(PCF50633_REG_DOWN2ENA, 0x2);
 	gpio->GPJDAT |= 0x000000001;	/* GTA02v1_GPIO_3D_RESET */
-#else
-	gpio->GPJDAT &= ~(1 << 5);	/* GTA02_GPIO_3D_RESET */
-	udelay(50*1000);
-	gpio->GPJDAT |= (1 << 5);	/* GTA02_GPIO_3D_RESET */
 #endif
 
 	/* if there's no other reason, must be regular reset */
@@ -296,9 +300,6 @@ continue_boot:
 	jbt6k74_init();
 	jbt6k74_enter_state(JBT_STATE_NORMAL);
 	jbt6k74_display_onoff(1);
-
-	/* switch on the backlight */
-	neo1973_backlight(1);
 
 #if 0
 	{

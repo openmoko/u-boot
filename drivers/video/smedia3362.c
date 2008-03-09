@@ -26,6 +26,9 @@
 #include "videomodes.h"
 #include <s3c2410.h>
 #include "smedia3362.h"
+#ifdef CONFIG_GTA02_REVISION
+#include "../../board/neo1973/common/jbt6k74.h"
+#endif
 
 #define ARRAY_SIZE(x)           (sizeof(x) / sizeof((x)[0]))
 
@@ -34,134 +37,184 @@ GraphicDevice smi;
 
 #define GLAMO_REG(x)	(*(volatile unsigned short *)(CONFIG_GLAMO_BASE + x))
 
-static inline void glamo_reg_write(u_int16_t reg, u_int16_t val)
+static inline void
+glamo_reg_write(u_int16_t reg, u_int16_t val)
 {
 	GLAMO_REG(reg) = val;
 }
 
-static inline u_int16_t glamo_reg_read(u_int16_t reg)
+static inline u_int16_t
+glamo_reg_read(u_int16_t reg)
 {
 	return GLAMO_REG(reg);
 }
 
-struct glamo_script {
-	u_int16_t reg;
-	u_int16_t val;
-}; // __attribute__((packed));
+/* these are called by jbt6k74 driver to do LCM bitbang SPI via Glamo */
 
-/* from 'initial glamo 3365 script' */
-static struct glamo_script gl3362_init_script[] = {
-	/* clock */
-	{ GLAMO_REG_CLOCK_MEMORY, 	0x300a },
-	{ GLAMO_REG_CLOCK_LCD,		0x10aa },
-	{ GLAMO_REG_CLOCK_MMC,		0x100a },
-	{ GLAMO_REG_CLOCK_ISP,		0x32aa },
-	{ GLAMO_REG_CLOCK_JPEG,		0x100a },
-	{ GLAMO_REG_CLOCK_3D,		0x302a },
-	{ GLAMO_REG_CLOCK_2D,		0x302a },
-	//{ GLAMO_REG_CLOCK_RISC1,	0x1aaa },
-	//{ GLAMO_REG_CLOCK_RISC2,	0x002a },
-	{ GLAMO_REG_CLOCK_MPEG,		0x3aaa },
-	{ GLAMO_REG_CLOCK_MPROC,	0x12aa },
-		{ 0xfffe, 5 },
-	{ GLAMO_REG_CLOCK_HOST,		0x000d },
-	{ GLAMO_REG_CLOCK_MEMORY,	0x000a },
-	{ GLAMO_REG_CLOCK_LCD,		0x00ee },
-	{ GLAMO_REG_CLOCK_MMC,		0x000a },
-	{ GLAMO_REG_CLOCK_ISP,		0x02aa },
-	{ GLAMO_REG_CLOCK_JPEG,		0x000a },
-	{ GLAMO_REG_CLOCK_3D,		0x002a },
-	{ GLAMO_REG_CLOCK_2D,		0x002a },
-	//{ GLAMO_REG_CLOCK_RISC1,	0x0aaa },
-	//{ GLAMO_REG_CLOCK_RISC2,	0x002a },
-	{ GLAMO_REG_CLOCK_MPEG,		0x0aaa },
-	{ GLAMO_REG_CLOCK_MPROC,	0x02aa },
-		{ 0xfffe, 5 },
-	{ GLAMO_REG_PLL_GEN1,		0x061a }, /* PLL1=50MHz, OSCI=32kHz */
-	{ GLAMO_REG_PLL_GEN3,		0x09c3 }, /* PLL2=80MHz, OSCI=32kHz */
-		{ 0xfffe, 5 },
-	{ GLAMO_REG_CLOCK_GEN5_1,	0x18ff },
-	{ GLAMO_REG_CLOCK_GEN5_2,	0x051f },
-	{ GLAMO_REG_CLOCK_GEN6,		0x2000 },
-	{ GLAMO_REG_CLOCK_GEN7,		0x0105 },
-	{ GLAMO_REG_CLOCK_GEN8,		0x0100 },
-	{ GLAMO_REG_CLOCK_GEN10,	0x0017 },
-	{ GLAMO_REG_CLOCK_GEN11,	0x0017 },
-
-	/* hostbus interface */
-	{ GLAMO_REG_HOSTBUS(1),		0x0e00 },
-	{ GLAMO_REG_HOSTBUS(2),		0x07ff },
-	{ GLAMO_REG_HOSTBUS(4),		0x0080 },
-	{ GLAMO_REG_HOSTBUS(5),		0x0244 },
-	{ GLAMO_REG_HOSTBUS(6),		0x0600 },
-	{ GLAMO_REG_HOSTBUS(12),	0xf00e },
-
-	/* memory */
-	{ GLAMO_REG_MEM_TYPE,		0x0874 }, /* VRAM 8Mbyte */
-	{ GLAMO_REG_MEM_GEN,		0xafaf },
-	{ GLAMO_REG_MEM_TIMING(1),	0x0108 },
-	{ GLAMO_REG_MEM_TIMING(2),	0x0010 },
-	{ GLAMO_REG_MEM_TIMING(3),	0x0000 },
-	{ GLAMO_REG_MEM_TIMING(4),	0x0000 },
-	{ GLAMO_REG_MEM_TIMING(5),	0x0000 },
-	{ GLAMO_REG_MEM_TIMING(6),	0x0000 },
-	{ GLAMO_REG_MEM_TIMING(7),	0x0000 },
-	{ GLAMO_REG_MEM_TIMING(8),	0x1002 },
-	{ GLAMO_REG_MEM_TIMING(9),	0x6006 },
-	{ GLAMO_REG_MEM_TIMING(10),	0x00ff },
-	{ GLAMO_REG_MEM_TIMING(11),	0x0001 },
-	{ GLAMO_REG_MEM_POWER1,		0x0020 },
-	{ GLAMO_REG_MEM_POWER2,		0x0000 },
-	{ GLAMO_REG_MEM_DRAM1,		0x0000 },
-		{ 0xfffe, 1 },
-	{ GLAMO_REG_MEM_DRAM1,		0xc100 },
-	{ GLAMO_REG_MEM_DRAM2,		0x01d6 },
-};
-
-#if 0
-static struct glamo_script gl3362_init_script[] = {
-	/* clock */
-	{ GLAMO_REG_CLOCK_MEMORY, 	0x300a },
-};
-#endif
-
-static void glamo_run_script(struct glamo_script *script, int num)
+void smedia3362_spi_cs(int b)
 {
-	int i;
-	for (i = 0; i < ARRAY_SIZE(gl3362_init_script); i++) {
-		struct glamo_script *reg = script + i;
-		printf("reg=0x%04x, val=0x%04x\n", reg->reg, reg->val);
+	glamo_reg_write(GLAMO_REG_GPIO_GEN4,
+	(glamo_reg_read(GLAMO_REG_GPIO_GEN4) & 0xffef) | (b << 4));
+}
 
-		if (reg->reg == 0xfffe)
-			udelay(reg->val*1000);
-		else
-			glamo_reg_write(reg->reg, reg->val);
+void smedia3362_spi_sda(int b)
+{
+	glamo_reg_write(GLAMO_REG_GPIO_GEN3,
+		(glamo_reg_read(GLAMO_REG_GPIO_GEN3) & 0xff7f) | (b << 7));
+}
+
+void smedia3362_spi_scl(int b)
+{
+	glamo_reg_write(GLAMO_REG_GPIO_GEN3,
+		(glamo_reg_read(GLAMO_REG_GPIO_GEN3) & 0xffbf) | (b << 6));
+}
+
+void smedia3362_lcm_reset(int b)
+{
+	glamo_reg_write(GLAMO_REG_GPIO_GEN2,
+		(glamo_reg_read(GLAMO_REG_GPIO_GEN2) & 0xffef) | (b << 4));
+}
+
+/*
+ * these are dumps of Glamo register ranges from working Linux
+ * framebuffer
+ */
+static u16 u16a_lcd_init[] = {
+	0x0020, 0x1020, 0x0B40, 0x01E0, 0x0280, 0x440C, 0x0000, 0x0000,
+	0x0000, 0x0000, 0x0000, 0x0000, 0x03C0, 0x0000, 0x0258, 0x0000,
+	0x0000, 0x0000, 0x0008, 0x0000, 0x0010, 0x0000, 0x01F0, 0x0000,
+	0x0294, 0x0000, 0x0000, 0x0000, 0x0002, 0x0000, 0x0004, 0x0000,
+	0x0284, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+	0x8023, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+};
+
+static u16 u16a_gen_init_0x0000[] = {
+	0x2020, 0x3650, 0x0002, 0x01FF, 0x0000, 0x0000, 0x0000, 0x0000,
+	0x000D, 0x000B, 0x00EE, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+	0x1839, 0x0000, 0x2000, 0x0101, 0x0100, 0x0000, 0x0000, 0x0000,
+	0x05DB, 0x5231, 0x09C3, 0x8261, 0x0003, 0x0000, 0x0000, 0x0000,
+	0x000F, 0x101E, 0xC0C3, 0x101E, 0x000F, 0x0001, 0x030F, 0x020F,
+	0x080F, 0x0F0F
+};
+
+static u16 u16a_gen_init_0x0200[] = {
+	0x0EF0, 0x07FF, 0x0000, 0x0080, 0x0344, 0x0600, 0x0000, 0x0000,
+	0x0000, 0x0000, 0x4000, 0xF00E, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0, 0x00C0,
+	0x0873, 0xAFAF, 0x0108, 0x0010, 0x0000, 0x0000, 0x0000, 0x0000,
+	0x0000, 0x1002, 0x6006, 0x00FF, 0x0001, 0x0020, 0x0000, 0x0000,
+	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+	0x3210, 0x5432, 0xE100, 0x01D6
+};
+
+#define glamofb_cmdq_empty() (glamo_reg_read(GLAMO_REGOFS_LCD + \
+					GLAMO_REG_LCD_STATUS1) & (1 << 15))
+
+void glamofb_cmd_mode(int on)
+{
+	if (on) {
+		while (!glamofb_cmdq_empty())
+			;
+		/* display the entire frame then switch to command */
+		glamo_reg_write(GLAMO_REGOFS_LCD + GLAMO_REG_LCD_COMMAND1,
+			  GLAMO_LCD_CMD_TYPE_DISP |
+			  GLAMO_LCD_CMD_DATA_FIRE_VSYNC);
+
+		while (!(glamo_reg_read(GLAMO_REGOFS_LCD +
+			 GLAMO_REG_LCD_STATUS2) & (1 << 12)))
+			;
+		udelay(5000); /* you really need this ;-) */
+	} else {
+		/* RGB interface needs vsync/hsync */
+		if (glamo_reg_read(GLAMO_REGOFS_LCD + GLAMO_REG_LCD_MODE3) &
+		    GLAMO_LCD_MODE3_RGB)
+			glamo_reg_write(GLAMO_REGOFS_LCD +
+				  GLAMO_REG_LCD_COMMAND1,
+				  GLAMO_LCD_CMD_TYPE_DISP |
+				  GLAMO_LCD_CMD_DATA_DISP_SYNC);
+
+		glamo_reg_write(GLAMO_REGOFS_LCD + GLAMO_REG_LCD_COMMAND1,
+			  GLAMO_LCD_CMD_TYPE_DISP |
+			  GLAMO_LCD_CMD_DATA_DISP_FIRE);
 	}
+}
 
+void glamofb_cmd_write(u_int16_t val)
+{
+	while (!glamofb_cmdq_empty())
+		;
+	glamo_reg_write(GLAMO_REGOFS_LCD + GLAMO_REG_LCD_COMMAND1, val);
 }
 
 static void glamo_core_init(void)
 {
+	int bp;
+
+	/* power up PLL1 and PLL2 */
+	glamo_reg_write(GLAMO_REG_PLL_GEN7, 0x0000);
+	glamo_reg_write(GLAMO_REG_PLL_GEN3, 0x0400);
+
+	/* enable memory clock and get it out of deep pwrdown */
+	glamo_reg_write(GLAMO_REG_CLOCK_MEMORY,
+		glamo_reg_read(GLAMO_REG_CLOCK_MEMORY) |
+		GLAMO_CLOCK_MEM_EN_MOCACLK);
+	glamo_reg_write(GLAMO_REG_MEM_DRAM2,
+			glamo_reg_read(GLAMO_REG_MEM_DRAM2) &
+			(~GLAMO_MEM_DRAM2_DEEP_PWRDOWN));
+	glamo_reg_write(GLAMO_REG_MEM_DRAM1,
+			glamo_reg_read(GLAMO_REG_MEM_DRAM1) &
+			(~GLAMO_MEM_DRAM1_SELF_REFRESH));
+	/*
+	 * we just fill up the general hostbus and LCD register sets
+	 * with magic values taken from the Linux framebuffer init action
+	 */
+	for (bp = 0; bp < ARRAY_SIZE(u16a_gen_init_0x0000); bp++)
+		glamo_reg_write(GLAMO_REGOFS_GENERIC | (bp << 1),
+				u16a_gen_init_0x0000[bp]);
+
+	for (bp = 0; bp < ARRAY_SIZE(u16a_gen_init_0x0200); bp++)
+		glamo_reg_write(GLAMO_REGOFS_HOSTBUS | (bp << 1),
+				u16a_gen_init_0x0200[bp]);
+	
+	/* spin until PLL1 lock */
+	while (!(glamo_reg_read(GLAMO_REG_PLL_GEN5) & 1))
+		;
+
+	glamofb_cmd_mode(1);
+	/* LCD registers */
+	for (bp = 0; bp < ARRAY_SIZE(u16a_lcd_init); bp++)
+		glamo_reg_write(GLAMO_REGOFS_LCD + (bp << 1),
+			u16a_lcd_init[bp]);
+	glamofb_cmd_mode(0);
+}
+
+void * video_hw_init(void)
+{
+	GraphicDevice *pGD = (GraphicDevice *)&smi;
+
 	printf("Glamo core device ID: 0x%04x, Revision 0x%04x\n",
 		glamo_reg_read(GLAMO_REG_DEVICE_ID),
 		glamo_reg_read(GLAMO_REG_REVISION_ID));
 
-	glamo_run_script(gl3362_init_script, ARRAY_SIZE(gl3362_init_script));
-}
-
-void *video_hw_init(void)
-{
-	u_int16_t reg;
-	GraphicDevice *pGD = (GraphicDevice *)&smi;
-
 	glamo_core_init();
 
-	printf("Video: ");
-
-	/* FIXME: returning since vram access still locks up system */
-	return NULL;
-
-	/* FIXME: this is static */
 	pGD->winSizeX = pGD->plnSizeX = 480;
 	pGD->winSizeY = pGD->plnSizeY = 640;
 	pGD->gdfBytesPP = 2;
@@ -170,16 +223,21 @@ void *video_hw_init(void)
 	pGD->frameAdrs = CONFIG_GLAMO_BASE + 0x00800000;
 	pGD->memSize = 0x200000; /* 480x640x16bit = 614400 bytes */
 
-	//printf("memset ");
-	//memset(pGD->frameAdrs, 0, pGD->memSize);
-
-	printf("END\n");
+#ifdef CONFIG_GTA02_REVISION
+	/* bring up the LCM */
+	smedia3362_lcm_reset(1);
+	if (getenv("splashimage"))
+		run_command(getenv("splashimage"), 0);
+	jbt6k74_enter_state(JBT_STATE_NORMAL);
+	jbt6k74_display_onoff(1);
+	/* switch on the backlight */
+	neo1973_backlight(1);
+#endif
 
 	return &smi;
 }
 
-void
-video_set_lut(unsigned int index, unsigned char r,
+void video_set_lut(unsigned int index, unsigned char r,
 	      unsigned char g, unsigned char b)
 {
 	/* FIXME: we don't support any palletized formats */
