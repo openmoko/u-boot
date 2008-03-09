@@ -43,6 +43,8 @@
 #include <ft_build.h>
 #endif
 
+void mmc_depower(void);
+
 DECLARE_GLOBAL_DATA_PTR;
 
 /*cmd_boot.c*/
@@ -296,6 +298,10 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		return 1;
 	}
 	show_boot_progress (6);
+
+#ifdef CONFIG_DEPOWER_MMC_ON_BOOT
+	mmc_depower();
+#endif
 
 	/*
 	 * We have reached the point of no return: we are going to

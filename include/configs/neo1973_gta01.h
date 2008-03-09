@@ -217,6 +217,7 @@
 #define CFG_MAX_NAND_DEVICE	1
 
 #define CONFIG_MMC		1
+#define CONFIG_MMC_S3C 1
 #define CFG_MMC_BASE		0xff000000
 
 /* EXT2 driver */

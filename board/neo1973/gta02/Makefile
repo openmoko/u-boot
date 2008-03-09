@@ -25,7 +25,7 @@ include $(TOPDIR)/config.mk
 
 LIB	= lib$(BOARD).a
 
-OBJS	:= gta02.o pcf50633.o nand.o nor.o ../common/cmd_neo1973.o \
+OBJS	:= gta02.o pcf50633.o nand.o nor.o glamo-mmc.o ../common/cmd_neo1973.o \
 	   ../common/gsmver.o \
 	   ../common/jbt6k74.o ../common/udc.o ../common/bootmenu.o
 SOBJS	:= ../common/lowlevel_init.o

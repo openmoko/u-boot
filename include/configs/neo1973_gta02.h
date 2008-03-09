@@ -214,8 +214,11 @@
 #define CFG_NAND_BASE		0x4e000000
 #define CFG_MAX_NAND_DEVICE	1
 
-#define CONFIG_MMC		1
+#define CONFIG_MMC 1
+#define CONFIG_MMC_WIDE 1
+#define CONFIG_MMC_GLAMO		1
 #define CFG_MMC_BASE		0xff000000
+#define CONFIG_DEPOWER_MMC_ON_BOOT 1
 
 /* EXT2 driver */
 #define CONFIG_EXT2		1
