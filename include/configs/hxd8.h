@@ -111,6 +111,7 @@
 #define CONFIG_CMD_MMC
 #define CONFIG_CMD_FAT
 #define CONFIG_CMD_EXT2
+#define CONFIG_CMD_LICENSE
 
 #define CONFIG_BOOTDELAY	3
 #define CONFIG_BOOTARGS    	""
