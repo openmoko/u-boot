@@ -29,14 +29,31 @@ OBJS	:= gta01.o pcf50606.o ../common/cmd_neo1973.o ../common/jbt6k74.o \
 	   ../common/gsmver.o ../common/udc.o
 SOBJS	:= ../common/lowlevel_init.o
 
+.PHONY:	all
+
+all:	$(LIB) lowevel_foo.bin
+
 $(LIB):	$(OBJS) $(SOBJS)
 	$(AR) crv $@ $(OBJS) $(SOBJS)
 
+lowlevel_foo.o:	../common/lowlevel_foo.S
+	$(CC) -c -DTEXT_BASE=0x33F80000 -march=armv4 \
+	  -o lowlevel_foo.o ../common/lowlevel_foo.S
+
+lowlevel_foo:	lowlevel_foo.o ../common/lowlevel_init.o ../common/lowlevel_foo.lds
+	$(LD) -T ../common/lowlevel_foo.lds -Ttext 0x33f80000 -Bstatic \
+	  ../common/lowlevel_init.o lowlevel_foo.o -o lowlevel_foo
+
+lowevel_foo.bin:	lowlevel_foo
+	$(CROSS_COMPILE)objcopy --gap-fill=0xff -O binary \
+	  lowlevel_foo lowlevel_foo.bin
+
+
 clean:
-	rm -f $(SOBJS) $(OBJS)
+	rm -f $(SOBJS) $(OBJS) lowlevel_foo lowlevel_foo.o
 
 distclean:	clean
-	rm -f $(LIB) core *.bak .depend
+	rm -f $(LIB) core *.bak .depend lowlevel_foo.bin
 
 #########################################################################
 
