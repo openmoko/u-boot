@@ -228,11 +228,12 @@ static int jbt_init_regs(struct jbt_info *jbt)
 	rc |= jbt_reg_write(jbt, JBT_REG_DISPLAY_MODE2, 0x00);
 	rc |= jbt_reg_write(jbt, JBT_REG_RGB_FORMAT, 0x60);
 	rc |= jbt_reg_write(jbt, JBT_REG_DRIVE_SYSTEM, 0x10);
-	rc |= jbt_reg_write(jbt, JBT_REG_BOOSTER_OP, 0x56);
-	rc |= jbt_reg_write(jbt, JBT_REG_BOOSTER_MODE, 0x33);
-	rc |= jbt_reg_write(jbt, JBT_REG_BOOSTER_FREQ, 0x11);
-	rc |= jbt_reg_write(jbt, JBT_REG_BOOSTER_FREQ, 0x11);
-	rc |= jbt_reg_write(jbt, JBT_REG_OPAMP_SYSCLK, 0x02);
+	rc |= jbt_reg_write(jbt, JBT_REG_BOOSTER_OP, 0x00 /*0x56*/);
+	rc |= jbt_reg_write(jbt, JBT_REG_BOOSTER_MODE, 0x00 /*0x33*/);
+	rc |= jbt_reg_write(jbt, JBT_REG_BOOSTER_FREQ, 0x22 /*0x11*/);
+	rc |= jbt_reg_write(jbt, JBT_REG_BOOSTER_FREQ, 0x22 /*0x11*/);
+//	rc |= jbt_reg_write(jbt, JBT_REG_BOOSTER_FREQ, 0x11);
+	rc |= jbt_reg_write(jbt, JBT_REG_OPAMP_SYSCLK, 0x00 /*0x02*/);
 	rc |= jbt_reg_write(jbt, JBT_REG_VSC_VOLTAGE, 0x2b);
 	rc |= jbt_reg_write(jbt, JBT_REG_VCOM_VOLTAGE, 0x40);
 	rc |= jbt_reg_write(jbt, JBT_REG_EXT_DISPL, 0x03);
@@ -249,21 +250,22 @@ static int jbt_init_regs(struct jbt_info *jbt)
 	rc |= jbt_reg_write16(jbt, JBT_REG_SLEEP_IN_LCCNT_G, 0x60c0);
 
 	rc |= jbt_reg_write16(jbt, JBT_REG_GAMMA1_FINE_1, 0x5533);
-	rc |= jbt_reg_write(jbt, JBT_REG_GAMMA1_FINE_2, 0x00);
-	rc |= jbt_reg_write(jbt, JBT_REG_GAMMA1_INCLINATION, 0x00);
+	rc |= jbt_reg_write16(jbt, JBT_REG_GAMMA1_FINE_1, 0x3343);
+	rc |= jbt_reg_write(jbt, JBT_REG_GAMMA1_FINE_2, 0x44 /*0x00*/);
+	rc |= jbt_reg_write(jbt, JBT_REG_GAMMA1_INCLINATION, 0x33 /*0x00*/);
 	rc |= jbt_reg_write(jbt, JBT_REG_GAMMA1_BLUE_OFFSET, 0x00);
 	rc |= jbt_reg_write(jbt, JBT_REG_GAMMA1_BLUE_OFFSET, 0x00);
 
-	rc |= jbt_reg_write16(jbt, JBT_REG_HCLOCK_VGA, 0x1f0);
+	rc |= jbt_reg_write16(jbt, JBT_REG_HCLOCK_VGA, 0x1f0); /* 496 */
 	rc |= jbt_reg_write(jbt, JBT_REG_BLANK_CONTROL, 0x02);
 	rc |= jbt_reg_write16(jbt, JBT_REG_BLANK_TH_TV, 0x0804);
 	rc |= jbt_reg_write16(jbt, JBT_REG_BLANK_TH_TV, 0x0804);
 
-	rc |= jbt_reg_write(jbt, JBT_REG_CKV_ON_OFF, 0x01);
+	rc |= jbt_reg_write(jbt, JBT_REG_CKV_ON_OFF, 0x00 /*0x01*/);
 	rc |= jbt_reg_write16(jbt, JBT_REG_CKV_1_2, 0x0000);
 
-	rc |= jbt_reg_write16(jbt, JBT_REG_OEV_TIMING, 0x0d0e);
-	rc |= jbt_reg_write16(jbt, JBT_REG_ASW_TIMING_1, 0x11a4);
+	rc |= jbt_reg_write16(jbt, JBT_REG_OEV_TIMING, 0x050a /*0x0d0e*/);
+	rc |= jbt_reg_write16(jbt, JBT_REG_ASW_TIMING_1, 0x2864 /*0x11a4*/);
 	rc |= jbt_reg_write(jbt, JBT_REG_ASW_TIMING_2, 0x0e);
 
 #if 0
