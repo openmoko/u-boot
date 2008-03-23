@@ -68,6 +68,8 @@ extern unsigned char booted_from_nand;
 extern unsigned char booted_from_nor;
 extern int nobootdelay;
 
+int gta02_get_pcb_revision(void);
+
 static inline void delay (unsigned long loops)
 {
 	__asm__ volatile ("1:\n"
@@ -170,12 +172,25 @@ int board_init(void)
 	gpio->GPBCON = 0x00155555;
 	gpio->GPBUP = 0x000007FF;
 
-	/* pulldown on "PIO_5" BT module to stop float when unpowered */
+	/*
+	 * PCB rev index found on C13, C15, D0, D3 and D4.  These are NC or
+	 * pulled up by 10K.  Therefore to ensure no current flows when they
+	 * are not interrogated, we drive them high.  When we interrogate them
+	 * we make them pulled them down inputs briefly and set them high op
+	 * again afterwards.
+	 */
+
+	/* pulldown on "PIO_5" BT module to stop float when unpowered
+	 * C13 and C15 are b0 and b1 of PCB rev index
+	 */
 	gpio->GPCCON = 0x55555155;
 	gpio->GPCUP = 0x0000FFFF & ~(1 << 5);
+	gpio->GPCDAT |= (1 << 13) | (1 << 15); /* index detect -> hi */
 
+	/* D0, D3 and D4 are b2, b3 and b4 of PCB rev index */
 	gpio->GPDCON = 0x55555555;
 	gpio->GPDUP = 0x0000FFFF;
+	gpio->GPDDAT |= (1 << 0) | (1 << 3) | (1 << 4); /* index detect -> hi */
 
 	/* pulldown on GPE11 / SPIMISO0 - goes to debug board and will float */
 	gpio->GPECON = 0xAAAAAAAA;
@@ -245,6 +260,12 @@ int board_late_init(void)
 	char buf[32];
 	int menu_vote = 0; /* <= 0: no, > 0: yes */
 	int seconds = 0;
+	int rev = gta02_get_pcb_revision();
+
+	printf("PCB rev: 0x%03X\n", rev);
+	/* expose in the env so we can add to kernel commandline */
+	sprintf(buf, "0x%03X", rev);
+	setenv("pcb_rev", buf);
 
 	/* Initialize the Power Management Unit with a safe register set */
 	pcf50633_init();
@@ -520,4 +541,54 @@ void neo1973_led(int led, int on)
 		gpio->GPBDAT |= (1 << led);
 	else
 		gpio->GPBDAT &= ~(1 << led);
+}
+
+/**
+ * returns PCB revision information in b9,b8 and b2,b1,b0
+ * Pre-GTA02 A6 returns 0x000
+ *     GTA02 A6 returns 0x101
+ */
+
+int gta02_get_pcb_revision(void)
+{
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+	int n;
+	u32 u;
+
+	/* make C13 and C15 pulled-down inputs */
+	gpio->GPCCON &= ~0xcc000000;
+	gpio->GPCUP  &= ~((1 << 13) | (1 << 15));
+	/* D0, D3 and D4 pulled-down inputs */
+	gpio->GPDCON &= ~0x000003c3;
+	gpio->GPDUP  &= ~((1 << 0) | (1 << 3) | (1 << 4));
+
+	/* delay after changing pulldowns */
+	u = gpio->GPCDAT;
+	u = gpio->GPDDAT;
+
+	/* read the version info */
+	u = gpio->GPCDAT;
+	n =  (u >> (13 - 0)) & 0x001;
+	n |= (u >> (15 - 1)) & 0x002;
+	u = gpio->GPDDAT;
+	n |= (u << (0 + 2))  & 0x004;
+
+	n |= (u << (8 - 3))  & 0x100;
+	n |= (u << (9 - 4))  & 0x200;
+
+	/*
+	 * when not being interrogated, all of the revision GPIO
+	 * are set to output HIGH without pulldown so no current flows
+	 * if they are NC or pulled up.
+	 */
+	/* make C13 and C15 high ouputs with no pulldowns */
+	gpio->GPCCON |= 0x44000000;
+	gpio->GPCUP  |= (1 << 13) | (1 << 15);
+	gpio->GPCDAT |= (1 << 13) | (1 << 15);
+	/* D0, D3 and D4 high ouputs with no pulldowns */
+	gpio->GPDCON |= 0x00000141;
+	gpio->GPDUP  |= (1 << 0) | (1 << 3) | (1 << 4);
+	gpio->GPDDAT |= (1 << 0) | (1 << 3) | (1 << 4);
+
+	return n;
 }
