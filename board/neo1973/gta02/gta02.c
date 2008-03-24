@@ -392,9 +392,18 @@ void neo1973_poweroff(void)
 
 void neo1973_backlight(int on)
 {
-	if (on)
+	if (on) {
+		/* pcf50633 manual p60
+		 * "led_out should never be set to 000000, as this would result
+		 * in a deadlock making it impossible to program another value.
+		 * If led_out should be inadvertently set to 000000, the
+		 * LEDOUT register can be reset by disabling and enabling the
+		 * LED converter via control bit led_on in the LEDENA register"
+		 */
+		pcf50633_reg_write(PCF50633_REG_LEDENA, 0x00);
 		pcf50633_reg_write(PCF50633_REG_LEDENA, 0x01);
-	else
+		pcf50633_reg_write(PCF50633_REG_LEDOUT, 0x3f);
+	} else
 		pcf50633_reg_write(PCF50633_REG_LEDENA, 0x00);
 }
 
