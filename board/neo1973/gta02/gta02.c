@@ -217,8 +217,10 @@ int board_init(void)
 
 int board_late_init(void)
 {
-	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
 	extern unsigned char booted_from_nand;
+	extern unsigned char booted_from_nor;
+
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
 	uint8_t int1, int2;
 	char buf[32];
 	int menu_vote = 0; /* <= 0: no, > 0: yes */
@@ -251,7 +253,7 @@ int board_late_init(void)
 	/* if there's no other reason, must be regular reset */
 	neo1973_wakeup_cause = NEO1973_WAKEUP_RESET;
 
-	if (!booted_from_nand)
+	if (!booted_from_nand && !booted_from_nor)
 		goto woken_by_reset;
 
 	/* save wake-up reason in environment */
@@ -311,11 +313,13 @@ continue_boot:
 	}
 #endif
 
-	if (menu_vote > 0) {
+	if (menu_vote > 0 || booted_from_nor) {
 		extern struct bootmenu_setup bootmenu_setup;
 
 		if (booted_from_nand)
 			bootmenu_setup.comment = "NAND";
+		if (booted_from_nor)
+			bootmenu_setup.comment = "NOR";
 		neo1973_bootmenu();
 		nobootdelay = 1;
 	}
