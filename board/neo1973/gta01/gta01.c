@@ -230,9 +230,14 @@ int board_late_init(void)
 	extern unsigned char booted_from_nand;
 	unsigned char tmp;
 	char buf[32];
+	int menu_vote = 0; /* <= 0: no, > 0: yes */
+	int seconds = 0;
 
 	/* Initialize the Power Management Unit with a safe register set */
 	pcf50606_init();
+
+	/* if there's no other reason, must be regular reset */
+	neo1973_wakeup_cause = NEO1973_WAKEUP_RESET;
 
 	if (!booted_from_nand)
 		goto woken_by_reset;
@@ -243,45 +248,41 @@ int board_late_init(void)
 	setenv("pcf50606_int1", buf);
 
 	if (tmp & PCF50606_INT1_ALARM) {
-		/* we've been woken up by RTC alarm or charger insert, boot */
+		/* we've been woken up by RTC alarm, boot */
 		neo1973_wakeup_cause = NEO1973_WAKEUP_ALARM;
 		goto continue_boot;
 	}
 	if (tmp & PCF50606_INT1_EXTONR) {
+		/* we've been woken up by charger insert */
 		neo1973_wakeup_cause = NEO1973_WAKEUP_CHARGER;
 	}
 
 	if (tmp & PCF50606_INT1_ONKEYF) {
-		int seconds = 0;
-		neo1973_wakeup_cause = NEO1973_WAKEUP_POWER_KEY;
 		/* we've been woken up by a falling edge of the onkey */
+		neo1973_wakeup_cause = NEO1973_WAKEUP_POWER_KEY;
+	}
 
-		/* we can't just setenv(bootdelay,-1) because that would
-		 * accidentially become permanent if the user does saveenv */
-		if (neo1973_911_key_pressed())
-			nobootdelay = 1;
-
-		while (1) {
-			u_int8_t int1, oocs;
-
-			oocs = pcf50606_reg_read(PCF50606_REG_OOCS);
-			if (oocs & PFC50606_OOCS_ONKEY)
-				break;
-
-			int1 = pcf50606_reg_read(PCF50606_REG_INT1);
-			if (int1 & PCF50606_INT1_SECOND)
-				seconds++;
-
-			if (seconds >= POWER_KEY_SECONDS)
-				goto continue_boot;
-		}
-		/* Power off if minimum number of seconds not reached */
-		neo1973_poweroff();
+	if (neo1973_wakeup_cause == NEO1973_WAKEUP_CHARGER) {
+		/* if we still think it was only a charger insert, boot */
+		goto continue_boot;
 	}
 
 woken_by_reset:
-	/* if there's no other reason, must be regular reset */
-	neo1973_wakeup_cause = NEO1973_WAKEUP_RESET;
+
+	while (neo1973_wakeup_cause == NEO1973_WAKEUP_RESET ||
+	    neo1973_on_key_pressed()) {
+		if (neo1973_aux_key_pressed())
+			menu_vote++;
+		else
+			menu_vote--;
+
+		if (neo1973_new_second())
+			seconds++;
+		if (seconds >= POWER_KEY_SECONDS)
+			goto continue_boot;
+	}
+	/* Power off if minimum number of seconds not reached */
+	neo1973_poweroff();
 
 continue_boot:
 	jbt6k74_init();
@@ -304,6 +305,11 @@ continue_boot:
 			gpio->GPBDAT &= ~(1 << 2);
 	}
 #endif
+
+	if (menu_vote > 0) {
+		neo1973_bootmenu();
+		nobootdelay = 1;
+	}
 
 	return 0;
 }
@@ -433,7 +439,17 @@ void neo1973_gps(int on)
 	printf("not implemented yet!\n");
 }
 
-int neo1973_911_key_pressed(void)
+int neo1973_new_second(void)
+{
+	return pcf50606_reg_read(PCF50606_REG_INT1) & PCF50606_INT1_SECOND;
+}
+
+int neo1973_on_key_pressed(void)
+{
+	return !(pcf50606_reg_read(PCF50606_REG_OOCS) & PFC50606_OOCS_ONKEY);
+}
+
+int neo1973_aux_key_pressed(void)
 {
 	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
 	if (gpio->GPFDAT & (1 << 6))

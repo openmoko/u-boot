@@ -160,8 +160,12 @@ void fprintf (int file, const char *fmt, ...)
 
 /** U-Boot INITIAL CONSOLE-COMPATIBLE FUNCTION *****************************/
 
+void (*console_poll_hook)(int activity);
+
 int getc (void)
 {
+	while (console_poll_hook && !tstc());
+
 	if (gd->flags & GD_FLG_DEVINIT) {
 		/* Get from the standard input */
 		return fgetc (stdin);
@@ -171,7 +175,7 @@ int getc (void)
 	return serial_getc ();
 }
 
-int tstc (void)
+static int do_tstc (void)
 {
 	if (gd->flags & GD_FLG_DEVINIT) {
 		/* Test the standard input */
@@ -180,6 +184,16 @@ int tstc (void)
 
 	/* Send directly to the handler */
 	return serial_tstc ();
+}
+
+int tstc (void)
+{
+	int ret;
+
+	ret = do_tstc();
+	if (console_poll_hook)
+		console_poll_hook(ret);
+	return ret;
 }
 
 void putc (const char c)
