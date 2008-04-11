@@ -111,18 +111,13 @@ static int reg_is_invalid(u_int8_t reg)
 	return 0;
 }
 
-/* figure out our charger situation */
-int pcf50633_read_charger_type(void)
+static u_int16_t pcf50633_adc_read(u_int8_t channel, u_int8_t avg)
 {
 	u_int16_t ret;
 
-	/* kill ratiometric, but enable ACCSW biasing */
-	pcf50633_reg_write(PCF50633_REG_ADCC2, 0x00);
-	pcf50633_reg_write(PCF50633_REG_ADCC3, 0x01);
-
 	/* start ADC conversion of selected channel */
-	pcf50633_reg_write(PCF50633_REG_ADCC1, PCF50633_ADCC1_MUX_ADCIN1 |
-					       PCF50633_ADCC1_AVERAGE_16 |
+	pcf50633_reg_write(PCF50633_REG_ADCC1, channel |
+					       avg |
 					       PCF50633_ADCC1_ADCSTART |
 					       PCF50633_ADCC1_RES_10BIT);
 
@@ -135,18 +130,41 @@ int pcf50633_read_charger_type(void)
 	      (pcf50633_reg_read(PCF50633_REG_ADCS3) &
 	      PCF50633_ADCS3_ADCDAT1L_MASK);
 
+	return ret;
+}
+
+/* figure out our charger situation */
+int pcf50633_read_charger_type(void)
+{
+	u_int16_t ret;
+
+	if ((pcf50633_reg_read(PCF50633_REG_MBCS1) & 0x3) != 0x3)
+		return 0; /* no power, just battery */
+
+	/* kill ratiometric, but enable ACCSW biasing */
+	pcf50633_reg_write(PCF50633_REG_ADCC2, 0x00);
+	pcf50633_reg_write(PCF50633_REG_ADCC3, 0x01);
+
+	ret = pcf50633_adc_read(PCF50633_ADCC1_MUX_ADCIN1,
+	    PCF50633_ADCC1_AVERAGE_16);
+
 	/* well it is nearest to the 1A resistor */
 	if (ret < ((ADC_NOMINAL_RES_1A + ADC_NOMINAL_RES_NC_R_USB) / 2))
 		return 1000;
 
-	/* ok all we know is there is no resistor, it can be USB pwr or none */
-	if ((pcf50633_reg_read(PCF50633_REG_MBCS1) & 0x3) == 0x3)
-		return 100; /* USB power then */
+	/* there is no resistor, so it must be USB pwr */
+	return 100; /* USB power then */
 
-	return 0; /* nope, no power, just battery */
 }
 
+u_int16_t pcf50633_read_battvolt(void)
+{
+	u_int16_t ret;
 
+	ret = pcf50633_adc_read(PCF50633_ADCC1_MUX_BATSNS_RES, 0);
+
+	return (ret * 6000) / 1024;
+}
 
 /* initialize PCF50633 register set */
 void pcf50633_init(void)
@@ -175,10 +193,13 @@ void pcf50633_init(void)
 	}
 }
 
+int pcf50633_usb_last_maxcurrent = -1;
+
 void pcf50633_usb_maxcurrent(unsigned int ma)
 {
 	u_int8_t val;
 
+	pcf50633_usb_last_maxcurrent = ma;
 	if (ma < 100)
 		val = PCF50633_MBCC7_USB_SUSPEND;
 	else if (ma < 500)

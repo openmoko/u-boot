@@ -223,7 +223,7 @@ void * video_hw_init(void)
 	pGD->frameAdrs = CONFIG_GLAMO_BASE + 0x00800000;
 	pGD->memSize = 0x200000; /* 480x640x16bit = 614400 bytes */
 
-#ifdef CONFIG_GTA02_REVISION
+#ifdef CONFIG_GTA02_REVISION_do_this_in_board_late_init
 	/* bring up the LCM */
 	smedia3362_lcm_reset(1);
 	if (getenv("splashimage"))

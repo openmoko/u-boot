@@ -387,6 +387,8 @@ enum pcf50633_reg_mbcs3 {
 /* this is to be provided by the board implementation */
 extern const u_int8_t pcf50633_initial_regs[__NUM_PCF50633_REGS];
 
+extern int pcf50633_usb_last_maxcurrent; /* mA or -1 if unknown */
+
 void pcf50633_reg_write(u_int8_t reg, u_int8_t val);
 
 u_int8_t pcf50633_reg_read(u_int8_t reg);
@@ -398,6 +400,9 @@ void pcf50633_init(void);
 void pcf50633_usb_maxcurrent(unsigned int ma);
 
 const char *pcf50633_charger_state(void);
+
+int pcf50633_read_charger_type(void);
+u_int16_t pcf50633_read_battvolt(void);
 
 #endif /* _PCF50633_H */
 

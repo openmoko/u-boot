@@ -45,6 +45,9 @@ DECLARE_GLOBAL_DATA_PTR;
 /* That many seconds the power key needs to be pressed to power up */
 #define POWER_KEY_SECONDS	1
 
+/* If the battery voltage is below this, we can't provide stable power */
+#define	SAVE_POWER_MILLIVOLT	3600
+
 #if defined(CONFIG_ARCH_GTA02_v1)
 //#define M_MDIV	0x7f		/* Fout = 405.00MHz */
 #define M_MDIV	0x7d		/* Fout = 399.00MHz */
@@ -62,6 +65,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define U_M_PDIV 4
 #define U_M_SDIV 2
 #endif
+
+extern void smedia3362_lcm_reset(int);
 
 unsigned int neo1973_wakeup_cause;
 extern unsigned char booted_from_nand;
@@ -293,6 +298,42 @@ static void set_revision(void)
 #endif
 }
 
+static void poll_charger(void)
+{
+	if (pcf50633_read_charger_type() == 1000)
+		pcf50633_usb_maxcurrent(1000);
+}
+
+static void wait_for_power(void)
+{
+	int seconds = 0;
+
+	while (1) {
+		/* battery is present -> try to boot */
+		if (!(pcf50633_reg_read(PCF50633_REG_BVMCTL) & 1))
+			break;
+/*
+ * Consider adding this later to the above condition:
+		    pcf50633_read_battvolt() >= SAVE_POWER_MILLIVOLT)
+ */
+
+		poll_charger();
+
+		/* we have plenty of external power -> try to boot */
+		if (pcf50633_usb_last_maxcurrent >= 500)
+			break;
+
+		if (neo1973_new_second())
+			seconds++;
+
+		/* blink the AUX LED */
+		neo1973_led(GTA02_LED_AUX_RED, !seconds || (seconds & 1));
+	}
+
+	/* switch off the AUX LED */
+	neo1973_led(GTA02_LED_AUX_RED, 0);
+}
+
 int board_late_init(void)
 {
 	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
@@ -300,6 +341,7 @@ int board_late_init(void)
 	char buf[32];
 	int menu_vote = 0; /* <= 0: no, > 0: yes */
 	int seconds = 0;
+	int enter_bootmenu;
 
 	set_revision();
 
@@ -310,12 +352,13 @@ int board_late_init(void)
 	int1 = pcf50633_reg_read(PCF50633_REG_INT1);
 	int2 = pcf50633_reg_read(PCF50633_REG_INT2);
 
-	/* switch on one of the power led's */
-	neo1973_led(GTA02_LED_PWR_ORANGE, 1);
+	wait_for_power();
 
 	/* issue a short pulse with the vibrator */
+	neo1973_led(GTA02_LED_AUX_RED, 1);
 	neo1973_vibrator(1);
 	udelay(20000);
+	neo1973_led(GTA02_LED_AUX_RED, 0);
 	neo1973_vibrator(0);
 
 #if defined(CONFIG_ARCH_GTA02_v1)
@@ -377,9 +420,15 @@ woken_by_reset:
 	neo1973_poweroff();
 
 continue_boot:
+	enter_bootmenu = menu_vote > 0 || booted_from_nor;
+	smedia3362_lcm_reset(1);
+	if (!enter_bootmenu && getenv("splashimage"))
+		run_command(getenv("splashimage"), 0);
 	jbt6k74_init();
 	jbt6k74_enter_state(JBT_STATE_NORMAL);
 	jbt6k74_display_onoff(1);
+	/* switch on the backlight */
+	neo1973_backlight(1);
 
 #if 0
 	{
@@ -390,7 +439,7 @@ continue_boot:
 	}
 #endif
 
-	if (menu_vote > 0 || booted_from_nor) {
+	if (enter_bootmenu) {
 		extern struct bootmenu_setup bootmenu_setup;
 
 		if (booted_from_nand)
