@@ -35,6 +35,8 @@
 #include <s3c2410.h>
 #elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 #include <s3c2440.h>
+#elif defined(CONFIG_S3C2443)
+#include <s3c2443.h>
 #endif
 #include <status_led.h>
 
@@ -171,7 +173,7 @@ copyex:
 #endif
 
 #if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
-    defined(CONFIG_S3C2442)
+    defined(CONFIG_S3C2442) || defined(CONFIG_S3C2443)
 	/* turn off the watchdog */
 
 # if defined(CONFIG_S3C2400)
@@ -212,6 +214,11 @@ copyex:
 # endif
 # define CLKDIVN_val  7 /* FCLK:HCLK:PCLK = 1:3:6 */
 # define CAMDIVN      0x4C000018
+#elif defined(CONFIG_S3C2443)
+# define INTSUBMSK_val        0x1fffffff
+# define EPLLCON_val  ((40 << 16) | (1 << 8) | (1))           /* 96 MHz */
+# define MPLLCON_val  ((81 << 16) | (2 << 8) | (0))           /* 1068 MHz */
+# define CLKDIV0_val  ((8 << 9) | (1 << 4) | (1 << 3) | (1 << 2)
 #endif
 
 	ldr     r0, =pWTCON
@@ -224,7 +231,8 @@ copyex:
 	mov	r1, #0xffffffff
 	ldr	r0, =INTMSK
 	str	r1, [r0]
-# if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
+# if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442) || \
+     defined(CONFIG_S3C2443)
 	ldr	r1, =INTSUBMSK_val
 	ldr	r0, =INTSUBMSK
 	str	r1, [r0]
@@ -243,6 +251,43 @@ copyex:
 	mcr	p15, 0, r1, c1, c0, 0
 
 
+#if defined(CONFIG_S3C2443)
+#define LOCKCON0	0x4c000000
+#define LOCKCON1	0x4c000004
+#define MPLLCON		0x4c000010
+#define EPLLCON		0x4c000018
+
+	ldr	r0, =CLKDIV0
+	ldr	r1, =CLKDIV0_val
+	str	r1, [r0]
+
+	/* set safe (way too long) locktime for both PLLs */
+	ldr	r0, =LOCKCON0
+	mov	r1, #0xffffff
+	str	r1, [r0]
+	ldr	r0, =LOCKCON1
+	str	r1, [r0]
+
+	/* configure MPLL */
+	ldr	r0, =MPLLCON
+	ldr	r1, =MPLLCON_val
+	str	r1, [r0]
+
+	/* select MPLL clock out for SYSCLK */
+	ldr	r0, =CLKSRC
+	ldr	r1, [r0]
+	orr	r1, r1, #0x10
+	str	r1, [r0]
+
+#if 0
+	/* configure EPLL */
+	ldr	r0, =EPLLCON
+	ldr	r1, =EPLLCON_val
+	str	r1, [r0]
+#endif
+
+
+#else /* i.e. 2440, 2410 and 2440 */
 #define LOCKTIME	0x4c000000
 #define UPLLCON		0x4c000008
 
@@ -270,6 +315,7 @@ copyex:
 	ldr	r0, =CLKDIVN
 	mov	r1, #CLKDIVN_val
 	str	r1, [r0]
+#endif
 
 #if 1
 	/* enable uart */
@@ -296,7 +342,8 @@ copyex:
 	str	r1, [r0, #0x28]
 #endif
 
-#endif	/* CONFIG_S3C2400 || CONFIG_S3C2410 || CONFIG_S3C2440 || CONFIG_S3C2442 */
+#endif	/* CONFIG_S3C2400 || CONFIG_S3C2410 || CONFIG_S3C2440 || CONFIG_S3C2442
+	   CONFIG_S3C2443 */
 
 #ifndef CONFIG_SKIP_LOWLEVEL_INIT
 #ifndef CONFIG_LL_INIT_NAND_ONLY
@@ -304,7 +351,8 @@ copyex:
 #endif
 
 #if defined(CONFIG_AT91RM9200) || defined(CONFIG_S3C2410) || \
-    defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
+    defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442) || \
+    defined(CONFIG_S3C2443)
 
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
 	adr	r0, _start		/* r0 <- current position of code   */

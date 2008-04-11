@@ -1,0 +1,130 @@
+/*
+ * (C) Copyright 2007 OpenMoko, Inc.
+ * Author: Harald Welte <laforge@openmoko.org>
+ *
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ */
+
+#ifndef __S3C2443_H
+#define __S3C2443_H
+
+/* S3C2443 device base addresses */
+#define S3C24X0_MEMCTL_BASE		0x48000000
+#define S3C24X0_USB_HOST_BASE		0x49000000
+#define S3C24X0_INTERRUPT_BASE		0x4A000000
+#define S3C24X0_DMA_BASE		0x4B000000
+#define S3C24X0_CLOCK_POWER_BASE	0x4C000000
+#define S3C24X0_LCD_BASE		0x4D000000
+#define S3C2440_NAND_BASE		0x4E000000
+#define S3C24X0_UART_BASE		0x50000000
+#define S3C24X0_TIMER_BASE		0x51000000
+#define S3C24X0_USB_DEVICE_BASE		0x49800000
+//#define USB_DEVICE_PHYS_ADR		0x49800000
+#define S3C24X3_HSMMC_BASE		0x4A800000
+#define S3C24X3_HSSPI_BASE		0x52000000
+#define S3C24X0_WATCHDOG_BASE		0x53000000
+#define S3C24X0_I2C_BASE		0x54000000
+#define S3C24X0_I2S_BASE		0x55000000
+#define S3C24X0_GPIO_BASE		0x56000000
+#define S3C24X0_RTC_BASE		0x57000000
+#define S3C2440_ADC_BASE		0x58000000
+#define S3C24X0_SPI_BASE		0x59000000
+#define S3C2440_SDI_BASE		0x5A000000
+#define S3C2443_AC97_BASE		0x5A000000
+
+#include <s3c24x0.h>
+
+/* CLOCK & POWER MANAGEMENT (see S3C2443 manual chapter 2) */
+typedef struct {
+	S3C24X0_REG32	LOCKCON0;
+	S3C24X0_REG32	LOCKCON1;
+	S3C24X0_REG32	OSCSET;
+	S3C24X0_REG32	res1;
+	S3C24X0_REG32	MPLLCON;
+	S3C24X0_REG32	res2;
+	S3C24X0_REG32	EPLLCON;
+	S3C24X0_REG32	res3;
+	S3C24X0_REG32	CLKSRC;
+	S3C24X0_REG32	CLKDIV0;
+	S3C24X0_REG32	CLKDIV1;
+	S3C24X0_REG32	res4;
+	S3C24X0_REG32	HCLKCON;
+	S3C24X0_REG32	PCLKCON;
+	S3C24X0_REG32	SCLKCON;
+	S3C24X0_REG32	res5;
+	S3C24X0_REG32	PWRMODE;
+	S3C24X0_REG32	SWRST;
+	S3C24X0_REG32	res6[2];
+	S3C24X0_REG32	BUSPRI0;
+	S3C24X0_REG32	res7[3];
+} /*__attribute__((__packed__))*/ S3C2443_CLOCK_POWER;
+
+/* NAND FLASH (see S3C2443 manual chapter 7) */
+typedef struct {
+	S3C24X0_REG32	NFCONF;
+	S3C24X0_REG32	NFCONT;
+	S3C24X0_REG32	NFCMD;
+	S3C24X0_REG32	NFADDR;
+	S3C24X0_REG32	NFDATA;
+	S3C24X0_REG32	NFMECCD0;
+	S3C24X0_REG32	NFMECCD1;
+	S3C24X0_REG32	NFSECCD;
+	S3C24X0_REG32	NFSBLK;
+	S3C24X0_REG32	NFEBLK;
+	S3C24X0_REG32	NFSTAT;
+	S3C24X0_REG32	NFECCERR0;
+	S3C24X0_REG32	NFECCERR1;
+	S3C24X0_REG32	NFMECC0;
+	S3C24X0_REG32	NFMECC1;
+	S3C24X0_REG32	NFSECC;
+	S3C24X0_REG32	NFMLCBITPT;
+} /*__attribute__((__packed__))*/ S3C2443_NAND;
+
+/* STATIC MEMORY (see S3C2443 manual chapter 5) */
+struct s3c2443_sm_bank {
+	S3C24X0_REG32	SMBIDCYR;
+	S3C24X0_REG32	SMBWSTRDR;
+	S3C24X0_REG32	SMBWSTWRR;
+	S3C24X0_REG32	SMBWSTOENR;
+	S3C24X0_REG32	SMBWSTWENR;
+	S3C24X0_REG32	SMBCR;
+	S3C24X0_REG32	SMBSR;
+	S3C24X0_REG32	SMBWSTBRDR;
+};
+
+typedef struct {
+	struct s3c2443_sm_bank bank[5];	/* 0x4f000000..0x4f0000bf */
+	S3C24X0_REG32	res[0x40];	/* 0x4f0000c0..0x4f0000ff */
+	S3C24X0_REG32	SMBONETYPER;
+	S3C24X0_REG32	SMCSR;
+	S3C24X0_REG32	SMCCR;
+} /*__attribute__((__packed__))*/ S3C2443_SMEM;
+
+
+/* MOBILE DRAM (see S3C2443 manual chapter 6) */
+typedef struct {
+	S3C24X0_REG32	BANKCFG;
+	S3C24X0_REG32	BANKCON1;
+	S3C24X0_REG32	BANKCON2;
+	S3C24X0_REG32	BANKCON3;
+	S3C24X0_REG32	REFRESH;
+	S3C24X0_REG32	TIMEOUT;
+} /*__attribute__((__packed__))*/ S3C2443_MDRAM
+
+#endif /* __S3C2443_H */
