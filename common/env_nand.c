@@ -271,6 +271,33 @@ void env_relocate_spec (void)
 	ulong total;
 	int ret;
 
+#if defined(CFG_ENV_OFFSET_OOB)
+	struct mtd_info *mtd = &nand_info[0];
+	struct nand_chip *this = mtd->priv;
+	int buf_len;
+	uint8_t *buf;
+
+	buf_len = (1 << this->bbt_erase_shift);
+	buf_len += (buf_len >> this->page_shift) * mtd->oobsize;
+	buf = malloc(buf_len);
+	if (!buf)
+		return;
+
+	nand_read_raw(mtd, buf, 0, mtd->oobblock, mtd->oobsize);
+	if (buf[mtd->oobblock + 8 + 0] == 'E' &&
+	    buf[mtd->oobblock + 8 + 1] == 'N' &&
+	    buf[mtd->oobblock + 8 + 2] == 'V' &&
+	    buf[mtd->oobblock + 8 + 3] == '0') {
+		CFG_ENV_OFFSET = *((unsigned long *) &buf[mtd->oobblock + 8 + 4]);
+		/* fall through to the normal environment reading code below */
+		free(buf);
+		puts("Found Environment offset in OOB..\n");
+	} else {
+		free(buf);
+		return use_default();
+	}
+#endif
+
 	total = CFG_ENV_SIZE;
 	ret = nand_read(&nand_info[0], CFG_ENV_OFFSET, &total, (u_char*)env_ptr);
   	if (ret || total != CFG_ENV_SIZE)
