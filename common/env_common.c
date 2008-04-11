@@ -30,6 +30,10 @@
 #include <linux/stddef.h>
 #include <malloc.h>
 
+#ifdef CFG_PREBOOT_OVERRIDE
+extern char *preboot_override;
+#endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #ifdef CONFIG_AMIGAONEG3SE
@@ -227,7 +231,14 @@ void env_relocate (void)
 		puts ("*** Warning - bad CRC, using default environment\n\n");
 		show_boot_progress (-60);
 #endif
+	}
 
+#ifdef CFG_PREBOOT_OVERRIDE
+	if (preboot_override)
+		gd->env_valid = 0;
+#endif
+
+	if (gd->env_valid == 0) {
 		if (sizeof(default_environment) > ENV_SIZE)
 		{
 			puts ("*** Error - default environment is too large\n\n");

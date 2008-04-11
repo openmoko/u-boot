@@ -77,6 +77,14 @@ _fiq:			.word fiq
  *************************************************************************
  */
 
+
+/* Must follow the .balign above, so we get a well-known address ! */
+#ifdef CFG_PREBOOT_OVERRIDE
+.globl	preboot_override
+preboot_override:
+	.word	0
+#endif
+
 #ifdef CONFIG_S3C2410_NAND_BOOT
 .globl	booted_from_nand
 booted_from_nand:
