@@ -67,6 +67,7 @@
     defined(CONFIG_S3C2400) || \
     defined(CONFIG_S3C2410) || \
     defined(CONFIG_S3C2440) || \
+    defined(CONFIG_S3C2443) || \
     defined(CONFIG_440EP) || \
     defined(CONFIG_PCI_OHCI) || \
     defined(CONFIG_MPC5200) || \
