@@ -1071,7 +1071,11 @@ int nand_create_mtd_dynpart(struct mtd_info *mtd)
 	if (!mtdparts)
 		return -ENOMEM;
 
-	sprintf(mtdparts, "mtdparts=" CFG_NAND_DYNPART_MTD_KERNEL_NAME ":");
+	sprintf(mtdparts, "mtdparts="
+#ifdef CFG_MTDPARTS_PREFIX
+	    CFG_MTDPARTS_PREFIX
+#endif
+	    CFG_NAND_DYNPART_MTD_KERNEL_NAME ":");
 
 	for (part = 0; dynpart_size[part] != 0; part++) {
 		unsigned int bb_delta = 0;
