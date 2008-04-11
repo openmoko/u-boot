@@ -187,7 +187,8 @@ extern int nand_read_raw (struct mtd_info *mtd, uint8_t *buf, loff_t from, size_
  * This can only work if we have the ecc bytes directly behind the
  * data bytes. Applies for DOC and AG-AND Renesas HW Reed Solomon generators */
 #define NAND_HWECC_SYNDROME	0x00020000
-
+/* Do not create an BBT if none is found. Overrides NAND_BBT_CREATE. */
+#define NAND_DONT_CREATE_BBT	0x00040000
 
 /* Options set by nand scan */
 /* Nand scan has allocated oob_buf */
