@@ -2442,6 +2442,9 @@ gta01v4_config :	unconfig
 qt2410_config	:	unconfig
 	@./mkconfig $(@:_config=) arm arm920t qt2410 NULL s3c24x0
 
+hxd8_config	:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm920t hxd8 NULL s3c24x0
+
 scb9328_config	:	unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm920t scb9328 NULL imx
 
