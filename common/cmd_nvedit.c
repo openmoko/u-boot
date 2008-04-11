@@ -564,7 +564,36 @@ int do_saveenv (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	return (saveenv() ? 1 : 0);
 }
 
-#endif
+#ifdef CONFIG_CMD_LOADENV
+int do_loadenv(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	extern void env_relocate_spec(void);
+	extern char *env_name_spec;
+	extern env_t *env_ptr;
+
+	printf("Loading Environment from %s...\n", env_name_spec);
+
+	if (env_init())
+		return 1;
+	env_relocate_spec();
+	gd->env_addr = (ulong) &env_ptr->data;
+	return 0;
+}
+#endif /* CONFIG_CMD_LOADENV */
+
+#endif /* we have a writeable environment */
+
+#ifdef CONFIG_CMD_DEFAULTENV
+int do_defaultenv(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	extern char *env_name_spec;
+
+	printf("Environment reset to default settings\n");
+
+	default_env();
+	return 0;
+}
+#endif /* CONFIG_CMD_DEFAULTENV */
 
 
 /************************************************************************
@@ -617,7 +646,23 @@ U_BOOT_CMD(
 	NULL
 );
 
-#endif
+#ifdef CONFIG_CMD_LOADENV
+U_BOOT_CMD(
+	loadenv, 1, 0,	do_loadenv,
+	"loadenv - load environment variables from persistent storage\n",
+	NULL
+);
+#endif /* CONFIG_CMD_LOADENV */
+
+#endif /* we have a writeable environment */
+
+#ifdef CONFIG_CMD_DEFAULTENV
+U_BOOT_CMD(
+	defaultenv, 1, 0, do_defaultenv,
+	"defaultenv - reset environment to default settings\n",
+	NULL
+);
+#endif /* CONFIG_CMD_DEFAULTENV */
 
 #if defined(CONFIG_CMD_ASKENV)
 
