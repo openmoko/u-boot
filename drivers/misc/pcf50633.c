@@ -254,7 +254,7 @@ static unsigned char bin2bcd (unsigned int n)
 }
 
 
-void rtc_get(struct rtc_time *tmp)
+int rtc_get(struct rtc_time *tmp)
 {
 	tmp->tm_sec = bcd2bin(pcf50633_reg_read(PCF50633_REG_RTCSC));
 	tmp->tm_min = bcd2bin(pcf50633_reg_read(PCF50633_REG_RTCMN));
@@ -269,6 +269,8 @@ void rtc_get(struct rtc_time *tmp)
 		tmp->tm_year += 1900;
 	tmp->tm_yday = 0;
 	tmp->tm_isdst = 0;
+
+	return 0;
 }
 
 void rtc_set(struct rtc_time *tmp)
