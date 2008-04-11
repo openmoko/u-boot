@@ -180,20 +180,28 @@ copyex:
 	str	r1, [r0]
 #endif	/* CONFIG_S3C2400 || CONFIG_S3C2410 */
 
-	/*
-	 * we do sys-critical inits only at reboot,
-	 * not when booting from ram!
-	 */
 #ifndef CONFIG_SKIP_LOWLEVEL_INIT
+#ifndef CONFIG_LL_INIT_NAND_ONLY
 	bl	cpu_init_crit
+#endif
 #endif
 
 #if defined(CONFIG_AT91RM9200) || defined(CONFIG_S3C2410)
 
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
-#ifndef CONFIG_S3C2410_NAND_BOOT
-relocate:				/* relocate U-Boot to RAM	    */
 	adr	r0, _start		/* r0 <- current position of code   */
+
+#ifdef CONFIG_S3C2410_NAND_BOOT
+					/* are we running from NAND ?	    */
+#define	BWSCON	0x48000000
+	ldr	r1, =BWSCON		/* Z = CPU booted from NAND	    */
+	ldr	r1, [r1]
+	tst	r1, #6			/* BWSCON[2:1] = OM[1:0]	    */
+	teqeq	r0, #0			/* Z &= running at address 0	    */
+	beq	nand_load
+#endif /* CONFIG_S3C2410_NAND_BOOT */
+
+relocate:				/* relocate U-Boot to RAM	    */
 	ldr	r1, _TEXT_BASE		/* test if we run from flash or RAM */
 	cmp     r0, r1                  /* don't reloc during debug         */
 	beq     done_relocate
@@ -213,10 +221,13 @@ copy_loop:
 	ldr	pc, _done_relocate	/* jump to relocated code */
 _done_relocate:
 	.word	done_relocate
-done_relocate:
-#else /* NAND_BOOT */
-relocate:
-copy_myself:
+
+#ifdef CONFIG_S3C2410_NAND_BOOT
+nand_load:
+#if !defined(CONFIG_SKIP_LOWLEVEL_INIT) && defined(CONFIG_LL_INIT_NAND_ONLY)
+	bl	cpu_init_crit
+#endif
+
 	/* mov	r10, lr */
 
 	@ reset NAND
@@ -294,7 +305,8 @@ notmatch:
 #endif
 1:	b	1b
 done_nand_read:
-#endif /* NAND_BOOT */
+#endif /* CONFIG_S3C2410_NAND_BOOT */
+done_relocate:
 #endif /* CONFIG_SKIP_RELOCATE_UBOOT */
 #endif
 	/* Set up the stack						    */

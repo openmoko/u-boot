@@ -26,14 +26,10 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#if defined(BUILD_FOR_RAM)
-/* If we want to start u-boot from inside RAM */
-#define CONFIG_SKIP_LOWLEVEL_INIT	1
-#else
-/* we want to start u-boot directly from within NAND flash */
+/* we want to be able to start u-boot directly from within NAND flash */
+#define CONFIG_LL_INIT_NAND_ONLY
 #define CONFIG_S3C2410_NAND_BOOT	1
 #define CONFIG_S3C2410_NAND_SKIP_BAD	1
-#endif
 
 #define CFG_UBOOT_SIZE		0x40000 /* size of u-boot, for NAND loading */
 
