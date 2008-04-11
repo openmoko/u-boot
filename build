@@ -1,0 +1,3 @@
+make -s ARCH=arm CROSS_COMPILE=`pwd`/../../cross/bin/arm-angstrom-linux-gnueabi- gta02v5_config
+make -s ARCH=arm CROSS_COMPILE=`pwd`/../../cross/bin/arm-angstrom-linux-gnueabi- u-boot.udfu
+
