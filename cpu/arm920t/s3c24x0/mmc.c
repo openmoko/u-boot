@@ -137,7 +137,7 @@ static int mmc_block_read(uchar *dst, ulong src, ulong len)
 	dcon |= S3C2410_SDIDCON_RXAFTERCMD|S3C2410_SDIDCON_XFER_RXSTART;
 	if (wide)
 		dcon |= S3C2410_SDIDCON_WIDEBUS;
-#if defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 	dcon |= S3C2440_SDIDCON_DS_WORD | S3C2440_SDIDCON_DATSTART;
 #endif
 	sdi->SDIDCON = dcon;
@@ -403,7 +403,7 @@ int mmc_init(int verbose)
 	//sdi->SDIPRE = 0x3e;  /* SDCLK = PCLK/2 / (SDIPRE+1) = 396kHz */
 	sdi->SDIPRE = 0x02;  /* 2410: SDCLK = PCLK/2 / (SDIPRE+1) = 11MHz */
 	sdi->SDIDTIMER = 0xffff;
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 	sdi->SDIPRE = 0x05;  /* 2410: SDCLK = PCLK / (SDIPRE+1) = 11MHz */
 	sdi->SDIDTIMER = 0x7fffff;
 #endif

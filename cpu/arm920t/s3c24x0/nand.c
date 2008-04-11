@@ -58,7 +58,7 @@
 #define S3C2410_NFCONF_TWRPH0(x)   ((x)<<4)
 #define S3C2410_NFCONF_TWRPH1(x)   ((x)<<0)
 
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 
 #define oNFCMD		0x8
 #define oNFADDR		0xc
@@ -147,7 +147,7 @@ static void s3c2410_hwcontrol(struct mtd_info *mtd, int cmd)
 	case NAND_CTL_SETNCE:
 #if defined(CONFIG_S3C2410)
 		NFCONF &= ~NFCONF_nFCE;
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 		NFCONT &= ~NFCONF_nFCE;
 #endif
 		DEBUGN("NFCONF=0x%08x\n", NFCONF);
@@ -155,7 +155,7 @@ static void s3c2410_hwcontrol(struct mtd_info *mtd, int cmd)
 	case NAND_CTL_CLRNCE:
 #if defined(CONFIG_S3C2410)
 		NFCONF |= NFCONF_nFCE;
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 		NFCONT &= ~NFCONF_nFCE;
 #endif
 		DEBUGN("NFCONF=0x%08x\n", NFCONF);
@@ -235,7 +235,7 @@ int __board_nand_init(struct nand_chip *nand)
 	cfg |= S3C2410_NFCONF_TWRPH1(twrph1 - 1);
 
 	NFCONF = cfg;
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 	twrph0 = 7; twrph1 = 7; tacls = 7;
 	NFCONF = (tacls<<12)|(twrph0<<8)|(twrph1<<4)|(0<<0);
 	NFCONT = (0<<13)|(0<<12)|(0<<10)|(0<<9)|(0<<8)|(1<<6)|(1<<5)|(1<<4)|(1<<1)|(1<<0);
@@ -272,7 +272,7 @@ int __board_nand_init(struct nand_chip *nand)
 	nand->options = 0;
 #endif
 
-#if defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 /*
 	nand_select();
 	nand_clear_RnB();

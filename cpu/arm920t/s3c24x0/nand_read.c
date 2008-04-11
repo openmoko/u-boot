@@ -34,7 +34,7 @@
 #define nand_select()	(NFCONF &= ~0x800)
 #define nand_deselect()	(NFCONF |= 0x800)
 #define nand_clear_RnB()	do {} while (0)
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 #define NFCONF		__REGi(NF_BASE + 0x0)
 #define NFCONT		__REGi(NF_BASE + 0x4)
 #define NFCMD		__REGb(NF_BASE + 0x8)
@@ -142,7 +142,7 @@ static int nand_read_page_ll(unsigned char *buf, unsigned long addr)
 		*buf = (NFDATA & 0xff);
 		buf++;
 	}
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 	for (i = 0; i < NAND_PAGE_SIZE/2; i++) {
 		*ptr16 = NFDATA16;
 		ptr16++;

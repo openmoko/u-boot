@@ -34,7 +34,7 @@
 #include <s3c2400.h>
 #elif defined(CONFIG_S3C2410)
 #include <s3c2410.h>
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 #include <s3c2440.h>
 #endif
 #include <i2c.h>
@@ -65,7 +65,8 @@ static int GetI2CSDA(void)
 {
 	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
 
-#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
+    defined(CONFIG_S3C2442)
 	return (gpio->GPEDAT & 0x8000) >> 15;
 #endif
 #ifdef CONFIG_S3C2400
@@ -84,7 +85,8 @@ static void SetI2CSCL(int x)
 {
 	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
 
-#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
+    defined(CONFIG_S3C2442)
 	gpio->GPEDAT = (gpio->GPEDAT & ~0x4000) | (x&1) << 14;
 #endif
 #ifdef CONFIG_S3C2400
@@ -141,7 +143,8 @@ void i2c_init (int speed, int slaveadd)
 	}
 
 	if ((status & I2CSTAT_BSY) || GetI2CSDA () == 0) {
-#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
+    defined(CONFIG_S3C2442)
 		ulong old_gpecon = gpio->GPECON;
 #endif
 #ifdef CONFIG_S3C2400
@@ -149,7 +152,8 @@ void i2c_init (int speed, int slaveadd)
 #endif
 		/* bus still busy probably by (most) previously interrupted transfer */
 
-#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
+    defined(CONFIG_S3C2442)
 		/* set I2CSDA and I2CSCL (GPE15, GPE14) to GPIO */
 		gpio->GPECON = (gpio->GPECON & ~0xF0000000) | 0x10000000;
 #endif
@@ -173,7 +177,8 @@ void i2c_init (int speed, int slaveadd)
 		udelay (1000);
 
 		/* restore pin functions */
-#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
+    defined(CONFIG_S3C2442)
 		gpio->GPECON = old_gpecon;
 #endif
 #ifdef CONFIG_S3C2400

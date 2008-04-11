@@ -82,7 +82,8 @@ typedef struct {
 	S3C24X0_REG32	PRIORITY;
 	S3C24X0_REG32	INTPND;
 	S3C24X0_REG32	INTOFFSET;
-#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
+    defined(CONFIG_S3C2442)
 	S3C24X0_REG32	SUBSRCPND;
 	S3C24X0_REG32	INTSUBMSK;
 #endif
@@ -92,11 +93,13 @@ typedef struct {
 /* DMAS (see manual chapter 8) */
 typedef struct {
 	S3C24X0_REG32	DISRC;
-#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
+    defined(CONFIG_S3C2442)
 	S3C24X0_REG32	DISRCC;
 #endif
 	S3C24X0_REG32	DIDST;
-#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
+    defined(CONFIG_S3C2442)
 	S3C24X0_REG32	DIDSTC;
 #endif
 	S3C24X0_REG32	DCON;
@@ -107,7 +110,8 @@ typedef struct {
 #ifdef CONFIG_S3C2400
 	S3C24X0_REG32	res[1];
 #endif
-#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
+    defined(CONFIG_S3C2442)
 	S3C24X0_REG32	res[7];
 #endif
 } /*__attribute__((__packed__))*/ S3C24X0_DMA;
@@ -126,7 +130,7 @@ typedef struct {
 	S3C24X0_REG32	CLKCON;
 	S3C24X0_REG32	CLKSLOW;
 	S3C24X0_REG32	CLKDIVN;
-#ifdef CONFIG_S3C2440
+#if defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 	S3C24X0_REG32	CAMDIVN;
 #endif
 } /*__attribute__((__packed__))*/ S3C24X0_CLOCK_POWER;
@@ -148,7 +152,8 @@ typedef struct {
 	S3C24X0_REG32	res[8];
 	S3C24X0_REG32	DITHMODE;
 	S3C24X0_REG32	TPAL;
-#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
+#if defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
+    defined(CONFIG_S3C2442)
 	S3C24X0_REG32	LCDINTPND;
 	S3C24X0_REG32	LCDSRCPND;
 	S3C24X0_REG32	LCDINTMSK;
@@ -160,7 +165,7 @@ typedef struct {
 /* NAND FLASH (see S3C2410 manual chapter 6) */
 typedef struct {
 	S3C24X0_REG32	NFCONF;
-#ifdef CONFIG_S3C2440
+#if defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 	S3C24X0_REG32	NFCONT;
 #endif
 	S3C24X0_REG32	NFCMD;
@@ -466,7 +471,7 @@ typedef struct {
 	S3C24X0_REG32	GSTATUS3;
 	S3C24X0_REG32	GSTATUS4;
 #endif
-#ifdef CONFIG_S3C2440
+#if defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 	S3C24X0_REG32	GPACON;
 	S3C24X0_REG32	GPADAT;
 	S3C24X0_REG32	res1[2];
@@ -714,7 +719,7 @@ typedef struct {
 #if defined(CONFIG_S3C2410)
 	S3C24X0_REG32	SDIDAT;
 	S3C24X0_REG32	SDIIMSK;
-#elif defined(CONFIG_S3C2440)
+#elif defined(CONFIG_S3C2440) || defined(CONFIG_S3C2442)
 	S3C24X0_REG32	SDIIMSK;
 	S3C24X0_REG32	SDIDAT;
 #endif
