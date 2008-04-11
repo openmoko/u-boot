@@ -23,6 +23,7 @@
 #include <malloc.h>
 #include <environment.h>
 #include <nand.h>
+#include <util.h>
 #include <asm/errno.h>
 
 #if defined(CFG_ENV_OFFSET_OOB)
@@ -39,8 +40,8 @@ int do_dynenv(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	if (!buf)
 		return -ENOMEM;
 
+	ret = mtd->read_oob(mtd, 8, size, (size_t *) &size, (u_char *) buf);
 	if (!strcmp(cmd, "get")) {
-		ret = mtd->read_oob(mtd, 8, size, (size_t *) &size, (u_char *) buf);
 
 		if (buf[0] == 'E' && buf[1] == 'N' &&
 		    buf[2] == 'V' && buf[3] == '0')
@@ -49,7 +50,8 @@ int do_dynenv(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			printf("No dynamic environment marker in OOB block 0\n");
 
 	} else if (!strcmp(cmd, "set")) {
-		unsigned long addr;
+		unsigned long addr, dummy;
+
 		if (argc < 3)
 			goto usage;
 
@@ -57,7 +59,23 @@ int do_dynenv(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		buf[1] = 'N';
 		buf[2] = 'V';
 		buf[3] = '0';
-		addr = simple_strtoul(argv[2], NULL, 16);
+
+		if (arg_off_size(argc-2, argv+2, mtd, &addr, &dummy) < 0) {
+			printf("Offset or partition name expected\n");
+			goto fail;
+		}
+		if (!ret) {
+			uint8_t tmp[4];
+			int i;
+
+			memcpy(&tmp, &addr, 4);
+			for (i = 0; i != 4; i++)
+				if (tmp[i] & ~buf[i+4]) {
+					printf("ERROR: erase OOB block to "
+					  "write this value\n");
+					goto fail;
+				}
+		}
 		memcpy(buf+4, &addr, 4);
 
 		printf("%02x %02x %02x %02x - %02x %02x %02x %02x\n",
@@ -65,6 +83,8 @@ int do_dynenv(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			buf[4], buf[5], buf[6], buf[7]);
 
 		ret = mtd->write_oob(mtd, 8, size, (size_t *) &size, (u_char *) buf);
+		if (!ret)
+			CFG_ENV_OFFSET = addr;
 	} else
 		goto usage;
 
@@ -72,8 +92,9 @@ int do_dynenv(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	return ret;
 
 usage:
-	free(buf);
 	printf("Usage:\n%s\n", cmdtp->usage);
+fail:
+	free(buf);
 	return 1;
 }
 

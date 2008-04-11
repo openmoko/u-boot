@@ -92,7 +92,7 @@ static inline int str2long(char *p, ulong *num)
 	return (*p != '\0' && *endptr == '\0') ? 1 : 0;
 }
 
-static int
+int
 arg_off_size(int argc, char *argv[], nand_info_t *nand, ulong *off, ulong *size)
 {
 	int idx = nand_curr_device;
