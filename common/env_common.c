@@ -34,6 +34,10 @@
 extern char *preboot_override;
 #endif
 
+#ifdef CFG_ENV_OVERRIDE
+extern void *env_override;
+#endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #ifdef CONFIG_AMIGAONEG3SE
@@ -207,6 +211,12 @@ void default_env(void)
 	memcpy (env_ptr->data,
 		default_environment,
 		sizeof(default_environment));
+
+#ifdef CFG_ENV_OVERRIDE
+	if (env_override)
+		memcpy(env_ptr->data, env_override, ENV_SIZE);
+#endif
+
 #ifdef CFG_REDUNDAND_ENVIRONMENT
 	env_ptr->flags = 0xFF;
 #endif
