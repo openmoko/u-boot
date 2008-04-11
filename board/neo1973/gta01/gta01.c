@@ -334,6 +334,7 @@ u_int32_t get_board_rev(void)
 void neo1973_poweroff(void)
 {
 	serial_printf("poweroff\n");
+	udc_disconnect();
 	pcf50606_reg_write(PCF50606_REG_OOCC1, PCF50606_OOCC1_GOSTDBY);
 	/* don't return to caller */
 	while (1) ;

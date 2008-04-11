@@ -222,6 +222,13 @@ void s3c2410_irq(void)
 	S3C24X0_INTERRUPT * irq = S3C24X0_GetBase_INTERRUPT();
 	u_int32_t intpnd = irq->INTPND;
 
+#ifdef CONFIG_USB_DEVICE
+	if (intpnd & BIT_USBD) {
+		s3c2410_udc_irq();
+		irq->SRCPND = BIT_USBD;
+		irq->INTPND = BIT_USBD;
+	}
+#endif /* USB_DEVICE */
 }
 #endif /* USE_IRQ */
 

@@ -32,6 +32,7 @@ COBJS-y += usbdcore.o
 COBJS-y += usbdcore_ep0.o
 COBJS-y += usbdcore_mpc8xx.o
 COBJS-y += usbdcore_omap1510.o
+COBJS-y += usbdcore_s3c2410.o
 
 COBJS	:= $(COBJS-y)
 SRCS 	:= $(COBJS:.o=.c)

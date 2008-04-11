@@ -96,6 +96,18 @@ int do_neo1973 ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			neo1973_gps(1);
 		else
 			neo1973_gps(0);
+	} else if (!strcmp(argv[1], "udc")) {
+		if (argc < 3)
+			goto out_help;
+		if (!strcmp(argv[2], "pullup")) {
+			if (argc < 4)
+				goto out_help;
+			if (!strcmp(argv[3], "on"))
+				udc_connect();
+			else
+				udc_disconnect();
+		} else
+			goto out_help;
 	} else {
 out_help:
 		printf("Usage:\n%s\n", cmdtp->usage);
@@ -122,5 +134,6 @@ U_BOOT_CMD(
 	"neo1973 vibrator (on|off) - switch vibrator on or off\n"
 	"neo1973 gsm (on|off|version) - switch GSM Modem on/off or print firmware version\n"
 	"neo1973 gps (on|off) - switch GPS system on or off\n"
+	"neo1973 udc pullup (on|off) - switch USB device controller pull-up on or off\n"
 );
 #endif	/* CONFIG_CMD_BDI */
