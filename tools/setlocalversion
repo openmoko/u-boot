@@ -23,3 +23,5 @@ if head=`git rev-parse --verify HEAD 2>/dev/null`; then
 		printf '%s' -dirty
 	fi
 fi
+
+printf '%s' -moko12
