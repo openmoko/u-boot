@@ -481,7 +481,7 @@ static int nand_default_block_markbad(struct mtd_info *mtd, loff_t ofs)
 
 	/* Do we have a flash based bad block table ? */
 	if (this->options & NAND_USE_FLASH_BBT)
-		return nand_update_bbt (mtd, ofs);
+		nand_update_bbt (mtd, ofs);
 
 	/* We write two bytes, so we dont have to mess with 16 bit access */
 	ofs += mtd->oobsize + (this->badblockpos & ~0x01);
