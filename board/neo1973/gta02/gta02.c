@@ -75,6 +75,8 @@ char __cfg_prompt[20] = "GTA02vXX # ";
  */
 int gta02_revision;
 
+static uint16_t gpb_shadow = 0; /* to work around GTA02v5 LED bug */
+
 int gta02_get_pcb_revision(void);
 
 static inline void delay (unsigned long loops)
@@ -452,6 +454,7 @@ void neo1973_vibrator(int on)
 #else
 		gpio->GPBDAT &= ~(1 << 3);	/* GPB3 */
 #endif
+	gpio->GPBDAT |= gpb_shadow;
 }
 
 void neo1973_gsm(int on)
@@ -571,10 +574,14 @@ void neo1973_led(int led, int on)
 	if (led > 2)
 		return;
 
-	if (on)
-		gpio->GPBDAT |= (1 << led);
-	else
-		gpio->GPBDAT &= ~(1 << led);
+	if (on) {
+		gpb_shadow |= (1 << led);
+		gpio->GPBDAT |= gpb_shadow;
+	}
+	else {
+		gpb_shadow &= ~(1 << led);
+		gpio->GPBDAT = (gpio->GPBDAT | gpb_shadow) & ~(1 << led);
+	}
 }
 
 /**
