@@ -31,7 +31,7 @@
 #include <part.h>
 #include <fat.h>
 
-#ifdef CONFIG_MMC
+#if defined(CONFIG_MMC) && defined(CONFIG_MMC_S3C)
 
 #define CONFIG_MMC_WIDE
 
@@ -536,4 +536,4 @@ mmc2info(ulong addr)
 	return 0;
 }
 
-#endif	/* CONFIG_MMC */
+#endif	/* defined(CONFIG_MMC) && defined(CONFIG_MMC_S3C) */

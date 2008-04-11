@@ -36,6 +36,26 @@
 #include <lmb.h>
 #include <asm/byteorder.h>
 
+#if defined(CONFIG_OF_LIBFDT)
+#include <fdt.h>
+#include <libfdt.h>
+#include <fdt_support.h>
+#endif
+#if defined(CONFIG_OF_FLAT_TREE)
+#include <ft_build.h>
+#endif
+
+void mmc_depower(void);
+
+DECLARE_GLOBAL_DATA_PTR;
+
+/*cmd_boot.c*/
+extern int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+
+#if defined(CONFIG_TIMESTAMP) || defined(CONFIG_CMD_DATE)
+#include <rtc.h>
+#endif
+
 #ifdef CFG_HUSH_PARSER
 #include <hush.h>
 #endif
@@ -205,6 +225,10 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	image_start = (ulong)os_hdr;
 	load_end = 0;
 	type_name = genimg_get_type_name (type);
+
+#ifdef CONFIG_DEPOWER_MMC_ON_BOOT
+	mmc_depower();
+#endif
 
 	/*
 	 * We have reached the point of no return: we are going to
