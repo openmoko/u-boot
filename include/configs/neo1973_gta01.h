@@ -92,6 +92,7 @@
 #define CONFIG_CMD_BSP
 #define CONFIG_CMD_ELF
 #define CONFIG_CMD_MISC
+#define CONFIG_CMD_JFFS2
 #define CONFIG_CMD_DIAG
 #define CONFIG_CMD_SAVES
 #define CONFIG_CMD_NAND
@@ -201,13 +202,13 @@
 #define CONFIG_FAT		1
 #define CONFIG_SUPPORT_VFAT
 
-#if 0
+#if 1
 /* JFFS2 driver */
 #define CONFIG_JFFS2_CMDLINE	1
 #define CONFIG_JFFS2_NAND	1
 #define CONFIG_JFFS2_NAND_DEV	0
-#define CONFIG_JFFS2_NAND_OFF	0x634000
-#define CONFIG_JFFS2_NAND_SIZE	0x39cc000
+//#define CONFIG_JFFS2_NAND_OFF	0x634000
+//#define CONFIG_JFFS2_NAND_SIZE	0x39cc000
 #endif
 
 /* ATAG configuration */
@@ -248,5 +249,10 @@
 
 #define CONFIG_DRIVER_PCF50606		1
 #define CONFIG_RTC_PCF50606		1
+
+#define MTDIDS_DEFAULT	"nand0=neo1973-nand"
+#define MTPARTS_DEFAULT	"neo1973-nand:256k(u-boot),16k(u-boot_env),2M(kernel),640k(splash),-(jffs2)"
+#define CFG_NAND_DYNPART_MTD_KERNEL_NAME "neo1973-nand"
+#define CONFIG_NAND_DYNPART
 
 #endif	/* __CONFIG_H */

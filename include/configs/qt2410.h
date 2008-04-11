@@ -275,5 +275,7 @@
 
 #define MTDIDS_DEFAULT		"nand0=qt2410-nand"
 #define MTPARTS_DEFAULT		"qt2410-nand:192k(u-boot),8k(u-boot_env),2M(kernel),2M(splash),-(jffs2)"
+#define CFG_NAND_DYNPART_MTD_KERNEL_NAME "qt2410-nand"
+#define CONFIG_NAND_DYNPART
 
 #endif	/* __CONFIG_H */
