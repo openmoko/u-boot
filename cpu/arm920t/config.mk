@@ -31,5 +31,7 @@ PLATFORM_CPPFLAGS += -march=armv4t
 #
 # =========================================================================
 #PLATFORM_CPPFLAGS +=$(call cc-option,-mapcs-32,-mabi=apcs-gnu)
+PLATFORM_CPPFLAGS +=$(call cc-option,-mno-thumb-interwork,)
 PLATFORM_RELFLAGS +=$(call cc-option,-mshort-load-bytes,$(call cc-option,-malignment-traps,))
 PLATFORM_LDFLAGS += --defsym raise=hang
+
