@@ -251,12 +251,12 @@
 /* we have a board_late_init() function */
 #define BOARD_LATE_INIT			1
 
-#if 0
+#if 1
 #define CONFIG_VIDEO
 #define CONFIG_VIDEO_GLAMO3362
 #define CONFIG_CFB_CONSOLE
-#define CONFIG_VIDEO_LOGO
-#define CONFIG_SPLASH_SCREEN
+//#define CONFIG_VIDEO_LOGO
+//#define CONFIG_SPLASH_SCREEN
 #define CFG_VIDEO_LOGO_MAX_SIZE	(640*480+1024+100) /* 100 = slack */
 #define CONFIG_VIDEO_BMP_GZIP
 #define CONFIG_VGA_AS_SINGLE_DEVICE
