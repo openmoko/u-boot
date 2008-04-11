@@ -141,7 +141,7 @@ int pcf50633_read_charger_type(void)
 
 	/* ok all we know is there is no resistor, it can be USB pwr or none */
 	if ((pcf50633_reg_read(PCF50633_REG_MBCS1) & 0x3) == 0x3)
-		return 500; /* USB power then */
+		return 100; /* USB power then */
 
 	return 0; /* nope, no power, just battery */
 }
@@ -152,7 +152,8 @@ int pcf50633_read_charger_type(void)
 void pcf50633_init(void)
 {
 	unsigned long flags;
-	u_int8_t i, limit;
+	u_int8_t i;
+	int limit;
 
 	local_irq_save(flags);
 	for (i = 0; i < PCF50633_LAST_REG; i++) {
@@ -163,23 +164,15 @@ void pcf50633_init(void)
 	local_irq_restore(flags);
 
 	printf("Power: ");
-	switch (pcf50633_read_charger_type()) {
-	case 0: /* no charger, battery only */
-		printf("Battery\n");
-		limit = PCF50633_MBCC7_USB_SUSPEND;
-		break;
-	case 500:
-		printf("USB / 500mA\n");
-		limit = PCF50633_MBCC7_USB_500mA;
-		break;
-	default:
-		printf("1A\n");
-		limit = PCF50633_MBCC7_USB_1000mA;
-		break;
+	limit = pcf50633_read_charger_type();
+	/*
+	 * If we're on real USB, don't change the setting to avoid racing with
+	 * USB signaling.
+	 */
+	if (limit != 100) {
+		printf("%dmA\n", limit);
+		pcf50633_usb_maxcurrent(limit);
 	}
-	pcf50633_reg_write(PCF50633_REG_MBCC7,
-			   (pcf50633_reg_read(PCF50633_REG_MBCC7) &
-			   (~PCF56033_MBCC7_USB_MASK)) | limit);
 }
 
 void pcf50633_usb_maxcurrent(unsigned int ma)
@@ -187,13 +180,13 @@ void pcf50633_usb_maxcurrent(unsigned int ma)
 	u_int8_t val;
 
 	if (ma < 100)
-		val = 0x03;
+		val = PCF50633_MBCC7_USB_SUSPEND;
 	else if (ma < 500)
-		val = 0x00;
+		val = PCF50633_MBCC7_USB_100mA;
 	else if (ma < 1000)
-		val = 0x01;
+		val = PCF50633_MBCC7_USB_500mA;
 	else
-		val = 0x02;
+		val = PCF50633_MBCC7_USB_1000mA;
 
 	return pcf50633_reg_set_bit_mask(PCF50633_REG_MBCC7, 0x03, val);
 }

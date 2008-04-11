@@ -107,7 +107,7 @@ const u_int8_t pcf50633_initial_regs[__NUM_PCF50633_REGS] = {
 	[PCF50633_REG_MBCC4]	= 0xff, /* 255/255 == 1A adapter fast */
 	[PCF50633_REG_MBCC5]	= 0xff,	/* 255/255 == 1A usb fast */
 	[PCF50633_REG_MBCC6]	= 0x00, /* cutoff current 1/32 * Ichg */
-	[PCF50633_REG_MBCC7]	= 0x01,	/* 1.6A max bat curr, USB 500mA */
+	[PCF50633_REG_MBCC7]	= 0x00,	/* 1.6A max bat curr, USB 100mA */
 	[PCF50633_REG_MBCC8]	= 0x00,
 
 	[PCF50633_REG_BBCCTL]	= 0x19,	/* 3V, 200uA, on */
