@@ -38,12 +38,6 @@
 #define S3C2410_ECCSIZE		512
 #define S3C2410_ECCBYTES	3
 
-typedef enum {
-	S3C24X0_UART0,
-	S3C24X0_UART1,
-	S3C24X0_UART2
-} S3C24X0_UARTS_NR;
-
 /* S3C2410 device base addresses */
 #define S3C24X0_MEMCTL_BASE		0x48000000
 #define S3C24X0_USB_HOST_BASE		0x49000000
@@ -65,9 +59,23 @@ typedef enum {
 #define S3C2410_SDI_BASE		0x5A000000
 
 
+#define oNFCONF			0x00
+#define oNFCMD			0x04
+#define oNFADDR			0x08
+#define oNFDATA			0x0C
+#define oNFSTAT			0x10
+#define oNFECC			0x14
+
+#ifndef __ASSEMBLER__
+
 /* include common stuff */
 #include <s3c24x0.h>
 
+typedef enum {
+	S3C24X0_UART0,
+	S3C24X0_UART1,
+	S3C24X0_UART2
+} S3C24X0_UARTS_NR;
 
 static inline S3C24X0_MEMCTL * S3C24X0_GetBase_MEMCTL(void)
 {
@@ -142,6 +150,7 @@ static inline S3C2410_SDI * S3C2410_GetBase_SDI(void)
 	return (S3C2410_SDI * const)S3C2410_SDI_BASE;
 }
 
+#endif
 
 /* ISR */
 #define pISR_RESET		(*(unsigned *)(_ISR_STARTADDRESS+0x0))

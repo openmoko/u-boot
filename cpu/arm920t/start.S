@@ -5,6 +5,10 @@
  *  Copyright (c) 2002	Alex Züpke <azu@sysgo.de>
  *  Copyright (c) 2002	Gary Jennejohn <gj@denx.de>
  *
+ * S3C2410 NAND portions
+ *  Copyright (c) 2001  MIZI Research, Inc.
+ *  Copyright (c) 2006  OpenMoko, Inc. (Harald Welte <laforge@openmmoko.org>
+ *
  * See file CREDITS for list of people who contributed to this
  * project.
  *
@@ -27,6 +31,7 @@
 
 #include <config.h>
 #include <version.h>
+#include <s3c2410.h>
 #include <status_led.h>
 
 /*
@@ -116,8 +121,13 @@ start_code:
 	orr	r0,r0,#0xd3
 	msr	cpsr,r0
 
+	/* in case we run from the s3c24xx NAND stepping stone, the symbols
+	 * for LED support are in lib_arm/board.o, i.e. outside of the
+	 * steppingstone */
+#ifndef CONFIG_S3C2410_NAND_BOOT
 	bl coloured_LED_init
 	bl red_LED_on
+#endif
 
 #if	defined(CONFIG_AT91RM9200DK) || defined(CONFIG_AT91RM9200EK) || defined(CONFIG_AT91RM9200DF)
 	/*
@@ -178,9 +188,10 @@ copyex:
 	bl	cpu_init_crit
 #endif
 
-#ifdef	CONFIG_AT91RM9200
+#if defined(CONFIG_AT91RM9200) || defined(CONFIG_S3C2410)
 
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
+#ifndef CONFIG_S3C2410_NAND_BOOT
 relocate:				/* relocate U-Boot to RAM	    */
 	adr	r0, _start		/* r0 <- current position of code   */
 	ldr	r1, _TEXT_BASE		/* test if we run from flash or RAM */
@@ -197,6 +208,87 @@ copy_loop:
 	stmia	r1!, {r3-r10}		/* copy to   target address [r1]    */
 	cmp	r0, r2			/* until source end addreee [r2]    */
 	ble	copy_loop
+#else /* NAND_BOOT */
+relocate:
+copy_myself:
+	/* mov	r10, lr */
+
+	@ reset NAND
+	mov	r1, #S3C2410_NAND_BASE
+	ldr	r2, =0xf842		@ initial value enable tacls=3,rph0=6,rph1=0
+	str	r2, [r1, #oNFCONF]
+	ldr	r2, [r1, #oNFCONF]
+	bic	r2, r2, #0x800		@ enable chip
+	str	r2, [r1, #oNFCONF]
+	mov	r2, #0xff		@ RESET command
+	strb	r2, [r1, #oNFCMD]
+	mov	r3, #0			@ wait
+1:	add	r3, r3, #0x1
+	cmp	r3, #0xa
+	blt	1b
+2:	ldr	r2, [r1, #oNFSTAT]	@ wait ready
+	tst	r2, #0x1
+	beq	2b
+	ldr	r2, [r1, #oNFCONF]
+	orr	r2, r2, #0x800		@ disable chip
+	str	r2, [r1, #oNFCONF]
+
+	ldr	r0, _TEXT_BASE		/* upper 128 KiB: relocated uboot   */
+	sub	r0, r0, #CFG_MALLOC_LEN	/* malloc area                      */
+	sub	r0, r0, #CFG_GBL_DATA_SIZE /* bdinfo                        */
+#ifdef CONFIG_USE_IRQ
+	sub	r0, r0, #(CONFIG_STACKSIZE_IRQ+CONFIG_STACKSIZE_FIQ)
+#endif
+	sub	sp, r0, #12		/* leave 3 words for abort-stack    */
+
+	@ copy u-boot to RAM
+	ldr	r0, _TEXT_BASE
+	mov     r1, #0x0
+	mov	r2, #CFG_UBOOT_SIZE
+	bl	nand_read_ll
+
+	tst	r0, #0x0
+	beq	ok_nand_read
+#ifdef CONFIG_DEBUG_LL
+bad_nand_read:
+	ldr	r0, STR_FAIL
+	ldr	r1, SerBase
+	bl	PrintWord
+1:	b	1b		@ infinite loop
+#endif
+
+ok_nand_read:
+#ifdef CONFIG_DEBUG_LL
+	ldr	r0, STR_OK
+	ldr	r1, SerBase
+	bl	PrintWord
+#endif
+
+	@ verify
+	mov	r0, #0
+	@ldr	r1, =0x33f00000
+	ldr	r1, _TEXT_BASE
+	mov	r2, #0x400	@ 4 bytes * 1024 = 4K-bytes
+go_next:
+	ldr	r3, [r0], #4
+	ldr	r4, [r1], #4
+	teq	r3, r4
+	bne	notmatch
+	subs	r2, r2, #4
+	beq	done_nand_read
+	bne	go_next
+notmatch:
+#ifdef CONFIG_DEBUG_LL
+	sub	r0, r0, #4
+	ldr	r1, SerBase
+	bl	PrintHexWord
+	ldr	r0, STR_FAIL
+	ldr	r1, SerBase
+	bl	PrintWord
+#endif
+1:	b	1b
+done_nand_read:
+#endif /* NAND_BOOT */
 #endif	/* CONFIG_SKIP_RELOCATE_UBOOT */
 #endif
 	/* Set up the stack						    */
