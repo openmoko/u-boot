@@ -1122,4 +1122,6 @@ typedef struct {
 
 #endif
 
+int __board_nand_init(struct nand_chip *nand);
+
 #endif /*__S3C24X0_H__*/
