@@ -43,9 +43,14 @@
 void enable_interrupts (void)
 {
 	unsigned long temp;
-	__asm__ __volatile__("mrs %0, cpsr\n"
+	__asm__ __volatile__(
+#ifdef CONFIG_GTA02_REVISION
+			     "mov %0, #0x30000000\n"
+			     "mcr p15, 0, %0, c13, c0\n"
+#endif
+			     "mrs %0, cpsr\n"
 			     "bic %0, %0, #0x80\n"
-			     "msr cpsr_c, %0"
+			     "msr cpsr_c, %0\n"
 			     : "=r" (temp)
 			     :
 			     : "memory");
@@ -61,7 +66,11 @@ int disable_interrupts (void)
 	unsigned long old,temp;
 	__asm__ __volatile__("mrs %0, cpsr\n"
 			     "orr %1, %0, #0xc0\n"
-			     "msr cpsr_c, %1"
+			     "msr cpsr_c, %1\n"
+#ifdef CONFIG_GTA02_REVISION
+			     "mov %1, #0\n"
+			     "mcr p15, 0, %1, c13, c0\n"
+#endif
 			     : "=r" (old), "=r" (temp)
 			     :
 			     : "memory");

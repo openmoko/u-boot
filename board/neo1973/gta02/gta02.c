@@ -253,17 +253,28 @@ int board_init(void)
 	dcache_enable();
 
 	/*
-	 * Since the NOR is replaced by SteppingStone when the AUX button is
-	 * released, we have to wait for this and copy our exception vectors
-	 * before we can let u-boot enable interrupts.
+	 * Since the NOR at address 0 is replaced by SteppingStone when the AUX
+	 * button is released, we would crash when an interrupt arrives (e.g.,
+	 * on USB insertion).
+	 *
+	 * We solve this as follows: we copy the vector table to RAM at address
+	 * 0x30000000 and then use the PID feature in the 920T MMU to map all
+	 * addresses in the range 0x0....... to 0x3....... without actually
+	 * setting up page mappings in the MMU. Thus, vectors are then
+	 * retrieved from their location in RAM.
+	 *
+	 * Note that the mapping is done in lib_arm/interrupts.c, so that it
+	 * automatically tracks whether we allow interrupts or not. This is
+	 * particularly necessary when we boot, since the operating system may
+	 * not expect to find this sort of mapping to be active.
 	 */
-	if (booted_from_nor) {
+#ifdef CONFIG_GTA02_REVISION
+	{
 		extern char _start;
 
-		while (neo1973_aux_key_pressed());
-		memcpy((void *) 0, &_start, 0x40);
+		memcpy((void *) 0x30000000, &_start, 0x40);
 	}
-
+#endif
 	return 0;
 }
 
