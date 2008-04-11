@@ -164,8 +164,12 @@ out:
 
 static int yes(void)
 {
+	char *s;
 	char c;
 
+	s = getenv("dontask");
+	if (s && (s[0] =='y' || s[0] == 'Y') && !s[1])
+		return 1;
 	c = getc();
 	if (c != 'y' && c != 'Y')
 		return 0;
