@@ -95,7 +95,9 @@ static void poweroff_if_idle(void *user)
 }
 
 
-static struct bootmenu_setup bootmenu_setup = {
+/* "bootmenu_setup" is extern, so platform can tweak it */
+
+struct bootmenu_setup bootmenu_setup = {
 	.next_key = aux_key,
 	.enter_key = on_key,
 	.seconds = seconds,
