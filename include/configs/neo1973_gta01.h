@@ -28,7 +28,6 @@
 
 #if defined(BUILD_FOR_RAM)
 /* If we want to start u-boot from inside RAM */
-#define CONFIG_SKIP_RELOCATE_UBOOT	1
 #define CONFIG_SKIP_LOWLEVEL_INIT	1
 #else
 /* we want to start u-boot directly from within NAND flash */
