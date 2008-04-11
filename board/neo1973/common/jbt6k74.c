@@ -237,7 +237,11 @@ static int jbt_init_regs(struct jbt_info *jbt)
 	rc |= jbt_reg_write(jbt, JBT_REG_VCOM_VOLTAGE, 0x40);
 	rc |= jbt_reg_write(jbt, JBT_REG_EXT_DISPL, 0x03);
 	rc |= jbt_reg_write(jbt, JBT_REG_DCCLK_DCEV, 0x04);
-	rc |= jbt_reg_write(jbt, JBT_REG_ASW_SLEW, 0x02);
+	/*
+	 * default of 0x02 in JBT_REG_ASW_SLEW responsible for 72Hz requirement
+	 * to avoid red / blue flicker
+	 */
+	rc |= jbt_reg_write(jbt, JBT_REG_ASW_SLEW, 0x04);
 	rc |= jbt_reg_write(jbt, JBT_REG_DUMMY_DISPLAY, 0x00);
 
 	rc |= jbt_reg_write(jbt, JBT_REG_SLEEP_OUT_FR_A, 0x11);
