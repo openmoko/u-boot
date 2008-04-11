@@ -127,8 +127,12 @@
 
 #define STRINGIFY(s) DO_STRINGIFY(s)	/* expand the argument */
 #define DO_STRINGIFY(s) #s		/* quote it */
-#define	CFG_PROMPT		"GTA02v" STRINGIFY(CONFIG_GTA02_REVISION) " # "
+#define	CFG_PROMPT			__cfg_prompt
 						/* Monitor Command Prompt */
+#ifndef __ASSEMBLY__
+extern char __cfg_prompt[20];
+#endif
+
 #if defined(CONFIG_ARCH_GTA02_v1)
 #define	CONFIG_S3C2440		1		/* SAMSUNG S3C2440 SoC		*/
 #else
@@ -292,5 +296,9 @@
 #define CFG_MAX_FLASH_SECT 1
 
 #define DFU_NUM_ALTERNATES	7
+
+#ifndef __ASSEMBLY__
+extern int gta02_revision; /* use this instead of CONFIG_GTA02_REVISION */
+#endif
 
 #endif	/* __CONFIG_H */

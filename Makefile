@@ -2436,7 +2436,8 @@ gta02v1_config \
 gta02v2_config \
 gta02v3_config \
 gta02v4_config \
-gta02v5_config:	unconfig
+gta02v5_config \
+gta02v6_config:	unconfig
 	@sh board/neo1973/gta02/split_by_variant.sh $@
 
 gta01_config \

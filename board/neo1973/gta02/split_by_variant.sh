@@ -42,18 +42,11 @@ else
 	echo "CONFIG_USB_DFU_REVISION=0x0340" > $CFGTMP
 	;;
 
-	gta02v5_config)
+	gta02v5_config|gta02v6_config)
 	echo "#define CONFIG_ARCH_GTA02_v5" > $CFGINC
 	echo "#define CONFIG_GTA02_REVISION 5" >> $CFGINC
 	echo "CONFIG_USB_DFU_REVISION=0x0350" > $CFGTMP
 	;;
-
-	gta02v6_config)
-	echo "#define CONFIG_ARCH_GTA02_v6" > $CFGINC
-	echo "#define CONFIG_GTA02_REVISION 6" >> $CFGINC
-	echo "CONFIG_USB_DFU_REVISION=0x0360" > $CFGTMP
-	;;
-
 
 	*)
 	echo "$0:: Unrecognised config - using GTA02v5 config"
@@ -65,6 +58,7 @@ else
 	esac
 
 fi
+sed 's/^/#define /;s/=/ /' <$CFGTMP >>$CFGINC
 # ---------------------------------------------------------
 # Complete the configuration
 # ---------------------------------------------------------

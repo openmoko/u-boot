@@ -67,6 +67,13 @@ unsigned int neo1973_wakeup_cause;
 extern unsigned char booted_from_nand;
 extern unsigned char booted_from_nor;
 extern int nobootdelay;
+char __cfg_prompt[20] = "GTA02vXX # ";
+
+/*
+ * In >GTA02v5, use gta02_revision to test for features, not
+ * CONFIG_GTA02_REVISION or CONFIG_ARCH_GTA02_vX !
+ */
+int gta02_revision;
 
 int gta02_get_pcb_revision(void);
 
@@ -253,6 +260,37 @@ int board_init(void)
 	return 0;
 }
 
+static void set_revision(void)
+{
+	int rev = gta02_get_pcb_revision();
+	char buf[32];
+
+	if (CONFIG_GTA02_REVISION < 5)
+		gta02_revision = CONFIG_GTA02_REVISION;
+	else {
+		switch (rev) {
+		case 0x000:
+			gta02_revision = 5;
+			break;
+		case 0x001:
+			gta02_revision = 6;
+			break;
+		default:
+			printf("Unrecognized hardware revision 0x%03x. "
+			    "Defaulting to GTA02v6.\n", rev);
+			gta02_revision = 6;
+		}
+	}
+	sprintf(__cfg_prompt, "GTA02v%d # ", gta02_revision);
+
+#if 1 /* remove these after checking that Andy doesn't need them anymore */
+	printf("PCB rev: 0x%03X\n", rev);
+	/* expose in the env so we can add to kernel commandline */
+	sprintf(buf, "0x%03X", rev);
+	setenv("pcb_rev", buf);
+#endif
+}
+
 int board_late_init(void)
 {
 	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
@@ -260,12 +298,8 @@ int board_late_init(void)
 	char buf[32];
 	int menu_vote = 0; /* <= 0: no, > 0: yes */
 	int seconds = 0;
-	int rev = gta02_get_pcb_revision();
 
-	printf("PCB rev: 0x%03X\n", rev);
-	/* expose in the env so we can add to kernel commandline */
-	sprintf(buf, "0x%03X", rev);
-	setenv("pcb_rev", buf);
+	set_revision();
 
 	/* Initialize the Power Management Unit with a safe register set */
 	pcf50633_init();
@@ -378,7 +412,7 @@ int dram_init (void)
 
 u_int32_t get_board_rev(void)
 {
-	return 0x300+0x10*CONFIG_GTA02_REVISION;
+	return 0x300+0x10*gta02_revision;
 }
 
 void neo1973_poweroff(void)
@@ -546,7 +580,7 @@ void neo1973_led(int led, int on)
 /**
  * returns PCB revision information in b9,b8 and b2,b1,b0
  * Pre-GTA02 A6 returns 0x000
- *     GTA02 A6 returns 0x101
+ *     GTA02 A6 returns 0x001
  */
 
 int gta02_get_pcb_revision(void)
