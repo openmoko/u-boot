@@ -49,7 +49,7 @@
 #define WAIT		 	(0x1<<2)
 #define UBLB		 	(0x1<<3)
 
-#define B1_BWSCON	  	(DW32)
+#define B1_BWSCON	  	(DW16 + WAIT + UBLB)
 #define B2_BWSCON	  	(DW16)
 #define B3_BWSCON	  	(DW16 + WAIT + UBLB)
 #define B4_BWSCON	  	(DW16)
@@ -66,11 +66,11 @@
 #define B0_Tacp		 	0x0
 #define B0_PMC		 	0x0	/* normal */
 
-/* BANK1CON */
+/* BANK1CON: Smedia Glamo 3362 (on GTA02) */
 #define B1_Tacs		 	0x0	/*  0clk */
-#define B1_Tcos		 	0x0	/*  0clk */
-#define B1_Tacc		 	0x7	/* 14clk */
-#define B1_Tcoh		 	0x0	/*  0clk */
+#define B1_Tcos		 	0x3	/*  4clk */
+#define B1_Tacc		 	0x3	/*  4clk */
+#define B1_Tcoh		 	0x3	/*  4clk */
 #define B1_Tah		 	0x0	/*  0clk */
 #define B1_Tacp		 	0x0
 #define B1_PMC		 	0x0
@@ -109,16 +109,18 @@
 
 #define B6_MT		 	0x3	/* SDRAM */
 #define B6_Trcd	 	 	0x1	/* 3clk */
-#if defined (CONFIG_ARCH_GTA01_v3) || defined(CONFIG_ARCH_GTA01_v4)
+#if defined (CONFIG_ARCH_GTA01_v3) || defined(CONFIG_ARCH_GTA01_v4) || \
+    CONFIG_GTA02_REVISION >= 2
 #define B6_SCAN		 	0x1	/* 9bit */
+#define B7_SCAN		 	0x1	/* 9bit */
 #elif defined(CONFIG_ARCH_GTA01B_v2) || defined(CONFIG_ARCH_GTA01B_v3) || \
-      defined(CONFIG_ARCH_GTA01B_v4)
+      defined(CONFIG_ARCH_GTA01B_v4) || defined(CONFIG_ARCH_GTA02_v1)
 #define B6_SCAN		 	0x2	/* 10bit */
+#define B7_SCAN		 	0x2	/* 10bit */
 #endif
 
 #define B7_MT		 	0x3	/* SDRAM */
 #define B7_Trcd		 	0x1	/* 3clk */
-#define B7_SCAN		 	0x2	/* 10bit */
 
 /* REFRESH parameter */
 #define REFEN		 	0x1	/* Refresh enable */
@@ -165,6 +167,27 @@ lowlevel_init:
 	str	r1, [r0]
 #endif
 
+#if defined(CONFIG_ARCH_GTA02_v1)
+	/* enable KEEPACT(GPJ3) to make sure PMU keeps us alive */
+	ldr	r0, =0x56000000	/* GPJ base */
+	ldr	r1, [r0, #0xd0]	/* GPJCON */
+	orr	r1, r1, #(1 << 6)
+	str	r1, [r0, #0xd0]
+
+	ldr	r1, [r0, #0xd4]	/* GPJDAT */
+	orr	r1, r1, #(1 << 3)
+	str	r1, [r0, #0xd4]
+#elif CONFIG_GTA02_REVISION >= 2
+	/* enable KEEPACT(GPJ8) to make sure PMU keeps us alive */
+	ldr	r0, =0x56000000	/* GPJ base */
+	ldr	r1, [r0, #0xd0]	/* GPJCON */
+	orr	r1, r1, #(1 << 16)
+	str	r1, [r0, #0xd0]
+
+	ldr	r1, [r0, #0xd4]	/* GPJDAT */
+	orr	r1, r1, #(1 << 8)
+	str	r1, [r0, #0xd4]
+#endif
 	/* everything is fine now */
 	mov	pc, lr
 
@@ -182,6 +205,10 @@ SMRDATA:
     .word ((B6_MT<<15)+(B6_Trcd<<2)+(B6_SCAN))
     .word ((B7_MT<<15)+(B7_Trcd<<2)+(B7_SCAN))
     .word ((REFEN<<23)+(TREFMD<<22)+(Trp<<20)+(Trc<<18)+(Tchr<<16)+REFCNT)
+#if CONFIG_GTA02_REVISION >= 2
+    .word 0xb1
+#else
     .word 0xb2
+#endif
     .word 0x30
     .word 0x30

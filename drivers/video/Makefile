@@ -33,6 +33,7 @@ COBJS-y += s3c2410_fb.o
 COBJS-y += sed13806.o
 COBJS-y += sed156x.o
 COBJS-y += sm501.o
+COBJS-y += smedia3362.o
 COBJS-y += smiLynxEM.o
 COBJS-y += videomodes.o
 

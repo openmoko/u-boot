@@ -28,6 +28,7 @@ LIB 	:= $(obj)libmisc.a
 COBJS-y += ali512x.o
 COBJS-y += ns87308.o
 COBJS-y += pcf50606.o
+COBJS-y += pcf50633.o
 COBJS-y += status_led.o
 COBJS-$(CONFIG_FSL_LAW) += fsl_law.o
 
