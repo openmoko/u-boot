@@ -106,6 +106,7 @@
 #define CONFIG_CMD_REGINFO
 #define CONFIG_CMD_SAVES
 #define CONFIG_CMD_USB
+#define CONFIG_CMD_LICENSE
 
 #define CONFIG_BOOTDELAY	3
 #define CONFIG_BOOTARGS    	"root=/dev/mtdblock4 rootfstype=jffs2 console=ttySAC2,115200 loglevel=8"
