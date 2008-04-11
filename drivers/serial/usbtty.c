@@ -1,7 +1,7 @@
 /*
  * (C) Copyright 2003
  * Gerry Hamel, geh@ti.com, Texas Instruments
- *
+ * 
  * (C) Copyright 2006
  * Bryan O'Donoghue, bodonoghue@codehermit.ie
  *
@@ -25,6 +25,7 @@
 
 #ifdef CONFIG_USB_TTY
 
+#include <asm/io.h>
 #include <circbuf.h>
 #include <devices.h>
 #include "usbtty.h"
@@ -474,6 +475,12 @@ static void __usbtty_puts (const char *str, int len)
 		usbtty_poll ();
 
 		space = maxlen - usbtty_output.size;
+
+		/* If the USB is not configured, allow the circular buffer to
+		   be overwritten. Otherwise this while() will loop forever. */
+		if (!usbtty_configured())
+			space = maxlen;
+
 		/* Empty buffer here, if needed, to ensure space... */
 		if (space) {
 			write_buffer (&usbtty_output);
@@ -544,6 +551,14 @@ int drv_usbtty_init (void)
 	}
 	usbtty_init_terminal_type(strcmp(tt,"cdc_acm"));
 
+	/* Decide on which type of UDC device to be.
+	 */
+
+	if(!(tt = getenv("usbtty"))) {
+		tt = "generic";
+	}
+	usbtty_init_terminal_type(strcmp(tt,"cdc_acm"));
+	
 	/* prepare buffers... */
 	buf_init (&usbtty_input, USBTTY_BUFFER_SIZE);
 	buf_init (&usbtty_output, USBTTY_BUFFER_SIZE);

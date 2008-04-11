@@ -960,7 +960,7 @@ static void omap1510_udc_epn_tx (int ep)
 /* Handle general USB interrupts and dispatch according to type.
  * This function implements TRM Figure 14-13.
  */
-void omap1510_udc_irq (void)
+static void omap1510_udc_irq (void)
 {
 	u16 irq_src = inw (UDC_IRQ_SRC);
 	int valid_irq = 0;
@@ -1000,7 +1000,7 @@ void omap1510_udc_irq (void)
 }
 
 /* This function implements TRM Figure 14-26. */
-void omap1510_udc_noniso_irq (void)
+static void omap1510_udc_noniso_irq (void)
 {
 	unsigned short epnum;
 	unsigned short irq_src = inw (UDC_IRQ_SRC);
@@ -1052,6 +1052,20 @@ void omap1510_udc_noniso_irq (void)
 	if (!valid_irq)
 		serial_printf (": unknown non-ISO interrupt, IRQ_SRC %.4x\n",
 			       irq_src);
+}
+
+void udc_irq(void)
+{
+	/* Loop while we have interrupts.
+	 * If we don't do this, the input chain
+	 * polling delay is likely to miss
+	 * host requests.
+	 */
+	while (inw (UDC_IRQ_SRC) & ~UDC_SOF_Flg) {
+		/* Handle any new IRQs */
+		omap1510_udc_irq ();
+		omap1510_udc_noniso_irq ();
+	}
 }
 
 /*

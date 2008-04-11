@@ -27,7 +27,7 @@
 #include "usbdcore.h"
 #if defined(CONFIG_PPC)
 #include "usbdcore_mpc8xx.h"
-#elif defined(CONFIG_ARM)
+#elif defined(CONFIG_OMAP1510)
 #include "usbdcore_omap1510.h"
 #endif
 
@@ -36,12 +36,13 @@
 /* If no VendorID/ProductID is defined in config.h, pretend to be Linux
  * DO NOT Reuse this Vendor/Product setup with protocol incompatible devices */
 
+#ifndef CONFIG_USBD_VENDORID
 #define CONFIG_USBD_VENDORID 0x0525 	/* Linux/NetChip */
 #define CONFIG_USBD_PRODUCTID_GSERIAL 0xa4a6	/* gserial */
 #define CONFIG_USBD_PRODUCTID_CDCACM  0xa4a7	/* CDC ACM */
 #define CONFIG_USBD_MANUFACTURER "Das U-Boot"
 #define CONFIG_USBD_PRODUCT_NAME U_BOOT_VERSION
-
+#endif /* CONFIG_USBD_VENDORID */
 
 #define CONFIG_USBD_CONFIGURATION_STR "TTY via USB"
 
