@@ -66,6 +66,7 @@ static int abortboot(int);
 #undef DEBUG_PARSER
 
 char        console_buffer[CFG_CBSIZE];		/* console I/O buffer	*/
+int nobootdelay;
 
 #ifndef CONFIG_CMDLINE_EDITING
 static char * delete_char (char *buffer, char *p, int *colp, int *np, int plen);
@@ -387,7 +388,7 @@ void main_loop (void)
 
 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
 
-	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
+	if (!nobootdelay && bootdelay >= 0 && s && !abortboot (bootdelay)) {
 # ifdef CONFIG_AUTOBOOT_KEYED
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
 # endif
