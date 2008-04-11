@@ -30,12 +30,15 @@
  */
 
 #include <common.h>
-#if defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) || defined (CONFIG_TRAB)
+#if defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) || \
+    defined (CONFIG_S3C2440) || defined (CONFIG_TRAB)
 
 #if defined(CONFIG_S3C2400)
 #include <s3c2400.h>
 #elif defined(CONFIG_S3C2410)
 #include <s3c2410.h>
+#elif defined(CONFIG_S3C2440)
+#include <s3c2440.h>
 #endif
 
 #define MPLL 0
@@ -66,8 +69,17 @@ static ulong get_PLLCLK(int pllreg)
     m = ((r & 0xFF000) >> 12) + 8;
     p = ((r & 0x003F0) >> 4) + 2;
     s = r & 0x3;
-
+#if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410)
     return((CONFIG_SYS_CLK_FREQ * m) / (p << s));
+#elif defined(CONFIG_S3C2440)
+    /* To avoid integer overflow, changed the calc order */
+    if (pllreg == MPLL)
+    	return ( 2 * m * (CONFIG_SYS_CLK_FREQ / (p << s )) );
+    else
+    	return ( m * (CONFIG_SYS_CLK_FREQ / (p << s )) );
+#else
+#error "get_PLLCLK not implemented for CPU type"
+#endif
 }
 
 /* return FCLK frequency */
@@ -81,7 +93,23 @@ ulong get_HCLK(void)
 {
     S3C24X0_CLOCK_POWER * const clk_power = S3C24X0_GetBase_CLOCK_POWER();
 
+#if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410)
     return((clk_power->CLKDIVN & 0x2) ? get_FCLK()/2 : get_FCLK());
+#elif defined(CONFIG_S3C2440)
+    switch (clk_power->CLKDIVN & 0x6) {
+        case 0x0:
+	    return get_FCLK();
+	case 0x2:
+	    return get_FCLK()/2;
+	case 0x4:
+	    return (clk_power->CAMDIVN & 0x200) ? get_FCLK()/8 : get_FCLK()/4;
+	case 0x6:
+	    return (clk_power->CAMDIVN & 0x100) ? get_FCLK()/6 : get_FCLK()/3;
+    }
+    return 0;
+#else
+#error "get_HCLK not implemented for CPU type"
+#endif
 }
 
 /* return PCLK frequency */
@@ -98,4 +126,5 @@ ulong get_UCLK(void)
     return(get_PLLCLK(UPLL));
 }
 
-#endif /* defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) || defined (CONFIG_TRAB) */
+#endif /* defined(CONFIG_S3C2400) || defined (CONFIG_S3C2410) ||
+          defined(CONFIG_S3C2440) || defined (CONFIG_TRAB) */

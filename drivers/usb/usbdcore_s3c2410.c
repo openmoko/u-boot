@@ -24,7 +24,7 @@
 
 #include <config.h>
 
-#if defined(CONFIG_S3C2410) && defined(CONFIG_USB_DEVICE)
+#if (defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)) && defined(CONFIG_USB_DEVICE)
 
 #include <common.h>
 

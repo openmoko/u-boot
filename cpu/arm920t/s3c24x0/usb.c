@@ -24,12 +24,14 @@
 #include <common.h>
 
 #if defined(CONFIG_USB_OHCI_NEW) && defined(CFG_USB_OHCI_CPU_INIT)
-# if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410)
+# if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
 
 #if defined(CONFIG_S3C2400)
 # include <s3c2400.h>
 #elif defined(CONFIG_S3C2410)
 # include <s3c2410.h>
+#elif defined(CONFIG_S3C2440)
+# include <s3c2440.h>
 #endif
 
 int usb_cpu_init (void)
@@ -68,5 +70,5 @@ int usb_cpu_init_fail (void)
 	return 0;
 }
 
-# endif /* defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410) */
+# endif /* defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) */
 #endif /* defined(CONFIG_USB_OHCI) && defined(CFG_USB_OHCI_CPU_INIT) */

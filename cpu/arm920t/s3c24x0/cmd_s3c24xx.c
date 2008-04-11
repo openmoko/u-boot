@@ -27,7 +27,11 @@
 #include <common.h>
 #include <command.h>
 #include <net.h>		/* for print_IPaddr */
+#if defined(CONFIG_S3C2410)
 #include <s3c2410.h>
+#elif defined(CONFIG_S3C2440)
+#include <s3c2440.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -46,12 +50,18 @@ struct s3c24x0_pll_speed {
 	u_int16_t	mhz;
 	u_int32_t	mpllcon;
 	u_int32_t	clkdivn;
+	u_int32_t	camdivn;
 };
 
 #define CLKDIVN_1_1_1	0x00
 #define CLKDIVN_1_2_2	0x02
 #define CLKDIVN_1_2_4	0x03
 #define CLKDIVN_1_4_4	0x04
+
+#if defined(CONFIG_S3C2440)
+#define CLKDIVN_1_4_8	0x05
+#define CLKDIVN_1_3_6	0x07
+#endif
 
 #if defined(CONFIG_S3C2410)
 static const u_int32_t upllcon = ((0x78 << 12) + (0x2 << 4) + 0x3);
@@ -77,6 +87,61 @@ static const struct s3c24x0_pll_speed pll_configs[] = {
 		.clkdivn = CLKDIVN_1_2_4,
 	},
 };
+#elif defined(CONFIG_S3C2440)
+/* from page 7-21 of S3C2440A user's manual Revision 1 */
+#if (CONFIG_SYS_CLK_FREQ == 12000000)
+static const u_int32_t upllcon = ((0x38 << 12) + (2 << 4) + 2);
+static const struct s3c24x0_pll_speed pll_configs[] = {
+	{
+		.mhz = 200,
+		.mpllcon = ((142 << 12) + (7 << 4) + 1),
+		.clkdivn = CLKDIVN_1_2_4,
+	},
+	{
+		.mhz = 271,
+		.mpllcon = ((0xad << 12) + (0x2 << 4) + 0x2),
+		.clkdivn = CLKDIVN_1_2_4,
+	},
+	{
+		.mhz = 304,
+		.mpllcon = ((0x7d << 12) + (0x1 << 4) + 0x1),
+		.clkdivn = CLKDIVN_1_3_6,
+	},
+	{
+		.mhz = 405,
+		.mpllcon = ((0x7f << 12) + (0x2 << 4) + 0x1),
+		.clkdivn = CLKDIVN_1_3_6,
+	},
+#elif (CONFIG_SYS_CLK_FREQ == 16934400)
+static const u_int32_t upllcon = ((0x3c << 12) + (2 << 4) + 2);
+static const struct s3c24x0_pll_speed pll_configs[] = {
+	{
+		.mhz = 200,
+		.mpllcon = ((181 << 12) + (14 << 4) + 1),
+		.clkdivn = CLKDIVN_1_2_4,
+	},
+	{
+		.mhz = 266,
+		.mpllcon = ((0x76 << 12) + (0x2 << 4) + 0x2),
+		.clkdivn = CLKDIVN_1_2_4,
+		.camdivn = 0,
+	},
+	{
+		.mhz = 296,
+		.mpllcon = ((0x61 << 12) + (0x1 << 4) + 0x2),
+		.clkdivn = CLKDIVN_1_3_6,
+		.camdivn = 0,
+	},
+	{
+		.mhz = 399,
+		.mpllcon = ((0x6e << 12) + (0x3 << 4) + 0x1),
+		.clkdivn = CLKDIVN_1_3_6,
+		.camdivn = 0,
+	},
+#else
+#error "clock frequencies != 12MHz / 16.9344MHz not supported"
+#endif
+};
 #else
 #error "please define valid pll configurations for your cpu type"
 #endif
@@ -95,6 +160,10 @@ static int reconfig_mpll(u_int16_t mhz)
 
 	for (i = 0; i < ARRAY_SIZE(pll_configs); i++) {
 		if (pll_configs[i].mhz == mhz) {
+#if defined(CONFIG_S3C2440)
+			clk_power->CAMDIVN &= ~0x30;
+			clk_power->CAMDIVN |= pll_configs[i].camdivn;
+#endif
 			/* to reduce PLL lock time, adjust the LOCKTIME register */
 			clk_power->LOCKTIME = 0xFFFFFF;
 

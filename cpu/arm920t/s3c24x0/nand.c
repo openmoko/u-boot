@@ -36,23 +36,53 @@
 #define __REGi(x)	(*(volatile unsigned int *)(x))
 
 #define	NF_BASE		0x4e000000
+
 #define	NFCONF		__REGi(NF_BASE + 0x0)
-#define	NFCMD		__REGb(NF_BASE + 0x4)
-#define	NFADDR		__REGb(NF_BASE + 0x8)
-#define	NFDATA		__REGb(NF_BASE + 0xc)
-#define	NFSTAT		__REGb(NF_BASE + 0x10)
+
+#if defined(CONFIG_S3C2410)
+
+#define oNFCMD		0x4
+#define	oNFADDR		0x8
+#define oNFDATA		0xc
+#define oNFSTAT		0x10
 #define NFECC0		__REGb(NF_BASE + 0x14)
 #define NFECC1		__REGb(NF_BASE + 0x15)
 #define NFECC2		__REGb(NF_BASE + 0x16)
+#define NFCONF_nFCE	(1<<11)
 
 #define S3C2410_NFCONF_EN          (1<<15)
 #define S3C2410_NFCONF_512BYTE     (1<<14)
 #define S3C2410_NFCONF_4STEP       (1<<13)
 #define S3C2410_NFCONF_INITECC     (1<<12)
-#define S3C2410_NFCONF_nFCE        (1<<11)
 #define S3C2410_NFCONF_TACLS(x)    ((x)<<8)
 #define S3C2410_NFCONF_TWRPH0(x)   ((x)<<4)
 #define S3C2410_NFCONF_TWRPH1(x)   ((x)<<0)
+
+#elif defined(CONFIG_S3C2440)
+
+#define oNFCMD		0x8
+#define oNFADDR		0xc
+#define oNFDATA		0x10
+#define oNFSTAT		0x20
+
+#define	NFCONT		__REGi(NF_BASE + 0x04)
+#define	NFMECC0		__REGi(NF_BASE + 0x2C)
+#define NFCONF_nFCE	(1<<1)
+#define S3C2440_NFCONF_INITECC		(1<<4)
+#define S3C2440_NFCONF_MAINECCLOCK	(1<<5)
+#define nand_select()		(NFCONT &= ~(1 << 1))
+#define nand_deselect()		(NFCONT |= (1 << 1))
+#define nand_clear_RnB()	(NFSTAT |= (1 << 2))
+#define nand_detect_RB()	{ while(!(NFSTAT&(1<<2))); }
+#define nand_wait()		{ while(!(NFSTAT & 0x4)); } /* RnB_TransDectect */
+
+#endif
+
+#define	NFCMD		__REGb(NF_BASE + oNFCMD)
+#define	NFADDR		__REGb(NF_BASE + oNFADDR)
+#define	NFDATA		__REGb(NF_BASE + oNFDATA)
+#define	NFSTAT		__REGb(NF_BASE + oNFSTAT)
+
 
 static void s3c2410_hwcontrol(struct mtd_info *mtd, int cmd)
 {
@@ -62,23 +92,31 @@ static void s3c2410_hwcontrol(struct mtd_info *mtd, int cmd)
 
 	switch (cmd) {
 	case NAND_CTL_SETNCE:
-		NFCONF &= ~S3C2410_NFCONF_nFCE;
+#if defined(CONFIG_S3C2410)
+		NFCONF &= ~NFCONF_nFCE;
+#elif defined(CONFIG_S3C2440)
+		NFCONT &= ~NFCONF_nFCE;
+#endif
 		DEBUGN("NFCONF=0x%08x\n", NFCONF);
 		break;
 	case NAND_CTL_CLRNCE:
-		NFCONF |= S3C2410_NFCONF_nFCE;
+#if defined(CONFIG_S3C2410)
+		NFCONF |= NFCONF_nFCE;
+#elif defined(CONFIG_S3C2440)
+		NFCONT &= ~NFCONF_nFCE;
+#endif
 		DEBUGN("NFCONF=0x%08x\n", NFCONF);
 		break;
 	case NAND_CTL_SETALE:
-		chip->IO_ADDR_W = NF_BASE + 0x8;
+		chip->IO_ADDR_W = NF_BASE + oNFADDR;
 		DEBUGN("SETALE\n");
 		break;
 	case NAND_CTL_SETCLE:
-		chip->IO_ADDR_W = NF_BASE + 0x4;
+		chip->IO_ADDR_W = NF_BASE + oNFCMD;
 		DEBUGN("SETCLE\n");
 		break;
 	default:
-		chip->IO_ADDR_W = NF_BASE + 0xc;
+		chip->IO_ADDR_W = NF_BASE + oNFDATA;
 		break;
 	}
 	return;
@@ -137,15 +175,21 @@ int __board_nand_init(struct nand_chip *nand)
 	/* initialize hardware */
 	twrph0 = 3; twrph1 = 0; tacls = 0;
 
+#if defined(CONFIG_S3C2410)
 	cfg = S3C2410_NFCONF_EN;
 	cfg |= S3C2410_NFCONF_TACLS(tacls - 1);
 	cfg |= S3C2410_NFCONF_TWRPH0(twrph0 - 1);
 	cfg |= S3C2410_NFCONF_TWRPH1(twrph1 - 1);
 
 	NFCONF = cfg;
+#elif defined(CONFIG_S3C2440)
+	twrph0 = 7; twrph1 = 7; tacls = 7;
+	NFCONF = (tacls<<12)|(twrph0<<8)|(twrph1<<4)|(0<<0);
+	NFCONT = (0<<13)|(0<<12)|(0<<10)|(0<<9)|(0<<8)|(1<<6)|(1<<5)|(1<<4)|(1<<1)|(1<<0);
+#endif
 
 	/* initialize nand_chip data structure */
-	nand->IO_ADDR_R = nand->IO_ADDR_W = 0x4e00000c;
+	nand->IO_ADDR_R = nand->IO_ADDR_W = NF_BASE + oNFDATA;
 
 	/* read_buf and write_buf are default */
 	/* read_byte and write_byte are default */
@@ -170,12 +214,23 @@ int __board_nand_init(struct nand_chip *nand)
 	nand->options = 0;
 #endif
 
+#if defined(CONFIG_S3C2440)
+/*
+	nand_select();
+	nand_clear_RnB();
+	NFCMD = NAND_CMD_RESET;
+	{ volatile int i; for (i = 0; i < 10; i ++); }
+	nand_detect_RB();
+	nand_deselect();
+*/
+#endif
+
 	DEBUGN("end of nand_init\n");
 
 	return 0;
 }
 
 #else
- #error "U-Boot legacy NAND support not available for S3C2410"
+ #error "U-Boot legacy NAND support not available for S3C24xx"
 #endif
 #endif
