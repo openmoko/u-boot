@@ -637,13 +637,7 @@ typedef struct {
 	S3C24X0_REG32	SDIDCNT;
 	S3C24X0_REG32	SDIDSTA;
 	S3C24X0_REG32	SDIFSTA;
-#ifdef __BIG_ENDIAN
-	S3C24X0_REG8	res[3];
-	S3C24X0_REG8	SDIDAT;
-#else
-	S3C24X0_REG8	SDIDAT;
-	S3C24X0_REG8	res[3];
-#endif
+	S3C24X0_REG32	SDIDAT;
 	S3C24X0_REG32	SDIIMSK;
 } /*__attribute__((__packed__))*/ S3C2410_SDI;
 
@@ -1123,11 +1117,7 @@ typedef struct {
 #define rSDIDatCnt		(*(volatile unsigned *)0x5A000030)
 #define rSDIDatSta		(*(volatile unsigned *)0x5A000034)
 #define rSDIFSTA		(*(volatile unsigned *)0x5A000038)
-#ifdef __BIG_ENDIAN
-#define rSDIDAT			(*(volatile unsigned char *)0x5A00003F)
-#else
-#define rSDIDAT			(*(volatile unsigned char *)0x5A00003C)
-#endif
+#define rSDIDAT			(*(volatile unsigned *)0x5A00003C)
 #define rSDIIntMsk		(*(volatile unsigned *)0x5A000040)
 
 #endif
