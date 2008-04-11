@@ -191,7 +191,8 @@
 #define CONFIG_USBD_PRODUCT_NAME	"QT2410 Bootloader " U_BOOT_VERSION
 #define CONFIG_EXTRA_ENV_SETTINGS	"usbtty=cdc_acm\0"
 #define CONFIG_USBD_DFU			1
-#define CONFIG_USBD_DFU_XFER_SIZE	0x4000
+#define CONFIG_USBD_DFU_XFER_SIZE	4096
+#define CONFIG_USBD_DFU_INTERFACE	2
 
 /*-----------------------------------------------------------------------
  * Physical Memory Map

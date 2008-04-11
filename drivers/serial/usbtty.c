@@ -31,6 +31,8 @@
 #include "usbtty.h"
 #include "usb_cdc_acm.h"
 #include "usbdescriptors.h"
+#include <usb_dfu_descriptors.h>
+#include <usb_dfu.h>
 #include <config.h>		/* If defined, override Linux identifiers with
 			   	 * vendor specific ones */
 
@@ -106,7 +108,7 @@ extern struct usb_string_descriptor **usb_strings;
 static unsigned short rx_endpoint = 0;
 static unsigned short tx_endpoint = 0;
 static unsigned short interface_count = 0;
-static struct usb_string_descriptor *usbtty_string_table[STR_COUNT];
+static struct usb_string_descriptor *usbtty_string_table[NUM_STRINGS];
 
 /* USB Descriptor Strings */
 static u8 wstrLang[4] = {4,USB_DT_STRING,0x9,0x4};
@@ -157,6 +159,10 @@ struct acm_config_desc {
 	struct usb_interface_descriptor data_class_interface;
 	struct usb_endpoint_descriptor
 		data_endpoints[NUM_ENDPOINTS-1] __attribute__((packed));
+#ifdef CONFIG_USBD_DFU
+	struct usb_interface_descriptor uif_dfu;
+	struct usb_dfu_func_descriptor func_dfu;
+#endif
 } __attribute__((packed));
 
 static struct acm_config_desc acm_configuration_descriptors[NUM_CONFIGS] = {
@@ -167,7 +173,11 @@ static struct acm_config_desc acm_configuration_descriptors[NUM_CONFIGS] = {
     			.bDescriptorType = USB_DT_CONFIG,
 			.wTotalLength =
 				cpu_to_le16(sizeof(struct acm_config_desc)),
+#ifdef CONFIG_USBD_DFU
+	    		.bNumInterfaces = NUM_ACM_INTERFACES +1,
+#else
 	    		.bNumInterfaces = NUM_ACM_INTERFACES,
+#endif
     			.bConfigurationValue = 1,
 			.iConfiguration = STR_CONFIG,
 			.bmAttributes =
@@ -266,6 +276,11 @@ static struct acm_config_desc acm_configuration_descriptors[NUM_CONFIGS] = {
 				.bInterval		= 0xFF,
 			},
 		},
+#ifdef CONFIG_USBD_DFU
+		/* Interface 3 */
+		.uif_dfu = DFU_RT_IF_DESC,
+		.func_dfu = DFU_FUNC_DESC,
+#endif
 	},
 };
 
@@ -378,7 +393,7 @@ static int fill_buffer (circbuf_t * buf);
 void usbtty_poll (void);
 
 /* utility function for converting char* to wide string used by USB */
-static void str2wide (char *str, u16 * wide)
+void str2wide (char *str, u16 * wide)
 {
 	int i;
 	for (i = 0; i < strlen (str) && str[i]; i++){
@@ -654,6 +669,9 @@ static void usbtty_init_instances (void)
 	device_instance->bus = bus_instance;
 	device_instance->configurations = NUM_CONFIGS;
 	device_instance->configuration_instance_array = config_instance;
+#ifdef CONFIG_USBD_DFU
+	dfu_init_instance(device_instance);
+#endif
 
 	/* initialize bus instance */
 	memset (bus_instance, 0, sizeof (struct usb_bus_instance));
