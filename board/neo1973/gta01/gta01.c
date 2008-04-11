@@ -439,19 +439,60 @@ void neo1973_gps(int on)
 	printf("not implemented yet!\n");
 }
 
+static int pwr_int_pending(void)
+{
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+
+#if defined(CONFIG_ARCH_GTA01B_v4)
+	return !(gpio->GPGDAT & (1 << 1));	/* EINT9/GPG1 */
+#else
+	return !(gpio->GPGDAT & (1 << 8));	/* EINT16/GPG8 */
+#endif /* !CONFIG_ARCH_GTA01B_v4 */
+}
+
+static int have_int1(uint8_t mask)
+{
+	static uint8_t pending = 0;
+
+	if (pwr_int_pending()) {
+		/*
+		 * We retrieve all interupts, so that we clear any stray ones
+		 * in INT2 and INT3.
+		 */
+		uint8_t int1,int2,int3;
+
+		int1 = pcf50606_reg_read(PCF50606_REG_INT1);
+		int2 = pcf50606_reg_read(PCF50606_REG_INT2);
+		int3 = pcf50606_reg_read(PCF50606_REG_INT3);
+		pending |= int1;
+	}
+	if (!(pending & mask))
+		return 0;
+	pending &= ~mask;
+	return 1;
+}
+
 int neo1973_new_second(void)
 {
-	return pcf50606_reg_read(PCF50606_REG_INT1) & PCF50606_INT1_SECOND;
+	return have_int1(PCF50606_INT1_SECOND);
 }
 
 int neo1973_on_key_pressed(void)
 {
-	return !(pcf50606_reg_read(PCF50606_REG_OOCS) & PFC50606_OOCS_ONKEY);
+	static int pressed = -1;
+
+	if (pressed == -1 ||
+	    have_int1(PCF50606_INT1_ONKEYF | PCF50606_INT1_ONKEYR)) {
+		pressed = !(pcf50606_reg_read(PCF50606_REG_OOCS) &
+		     PFC50606_OOCS_ONKEY);
+}
+	return pressed;
 }
 
 int neo1973_aux_key_pressed(void)
 {
 	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+
 	if (gpio->GPFDAT & (1 << 6))
 		return 0;
 	return 1;

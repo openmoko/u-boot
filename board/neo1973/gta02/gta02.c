@@ -419,15 +419,55 @@ void neo1973_gps(int on)
 		pcf50633_reg_write(PCF50633_REG_LDO5ENA, 0x00);
 }
 
+static int pwr_int_pending(void)
+{
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+
+	return !(gpio->GPGDAT & (1 << 1));	/* EINT9/GPG1 */
+}
+
+static int have_int(uint8_t mask1, uint8_t mask2)
+{
+	static uint8_t pending1 = 0, pending2 = 0;
+
+	if (pwr_int_pending()) {
+		/*
+		 * We retrieve all interupts, so that we clear any stray ones
+		 * in INT2 and INT3.
+		 */
+		uint8_t ints[5];
+		int i;
+
+		for (i = 0; i != 5; i++)
+			ints[i] = pcf50633_reg_read(PCF50633_REG_INT1+i);
+		pending1 |= ints[0];
+		pending2 |= ints[1];
+	}
+	if (pending1 & mask1) {
+		pending1 &= ~mask1;
+		return 1;
+	}
+	if (pending2 & mask2) {
+		pending1 &= ~mask2;
+		return 1;
+	}
+	return 0;
+}
+
 int neo1973_new_second(void)
 {
-	return pcf50633_reg_read(PCF50633_REG_INT1) & PCF50633_INT1_SECOND;
+	return have_int(PCF50633_INT1_SECOND, 0);
 }
 
 int neo1973_on_key_pressed(void)
 {
-	return !(pcf50633_reg_read(PCF50633_REG_OOCSTAT)
-						& PCF50633_OOCSTAT_ONKEY);
+	static int pressed = -1;
+
+	if (pressed == -1 ||
+	    have_int(0, PCF50633_INT2_ONKEYF | PCF50633_INT2_ONKEYR))
+		pressed = !(pcf50633_reg_read(PCF50633_REG_OOCSTAT) &
+		    PCF50633_OOCSTAT_ONKEY);
+	return pressed;
 }
 
 int neo1973_aux_key_pressed(void)
