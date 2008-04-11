@@ -195,6 +195,25 @@ uchar *env_get_addr (int index)
 	}
 }
 
+void default_env(void)
+{
+	if (sizeof(default_environment) > ENV_SIZE)
+	{
+		puts ("*** Error - default environment is too large\n\n");
+		return;
+	}
+
+	memset (env_ptr, 0, sizeof(env_t));
+	memcpy (env_ptr->data,
+		default_environment,
+		sizeof(default_environment));
+#ifdef CFG_REDUNDAND_ENVIRONMENT
+	env_ptr->flags = 0xFF;
+#endif
+	env_crc_update ();
+	gd->env_valid = 1;
+}
+
 void env_relocate (void)
 {
 	DEBUGF ("%s[%d] offset = 0x%lx\n", __FUNCTION__,__LINE__,
@@ -238,23 +257,8 @@ void env_relocate (void)
 		gd->env_valid = 0;
 #endif
 
-	if (gd->env_valid == 0) {
-		if (sizeof(default_environment) > ENV_SIZE)
-		{
-			puts ("*** Error - default environment is too large\n\n");
-			return;
-		}
-
-		memset (env_ptr, 0, sizeof(env_t));
-		memcpy (env_ptr->data,
-			default_environment,
-			sizeof(default_environment));
-#ifdef CFG_REDUNDAND_ENVIRONMENT
-		env_ptr->flags = 0xFF;
-#endif
-		env_crc_update ();
-		gd->env_valid = 1;
-	}
+	if (gd->env_valid == 0)
+		default_env();
 	else {
 		env_relocate_spec ();
 	}

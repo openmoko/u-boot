@@ -107,4 +107,7 @@ typedef	struct environment_s {
 	unsigned char	data[ENV_SIZE]; /* Environment data		*/
 } env_t;
 
+
+void default_env(void);
+
 #endif	/* _ENVIRONMENT_H_ */
