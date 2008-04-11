@@ -1169,7 +1169,13 @@ static void *video_logo (void)
 	ulong addr;
 
 	if ((s = getenv ("splashimage")) != NULL) {
-		addr = simple_strtoul (s, NULL, 16);
+		char *end;
+
+		addr = simple_strtoul (s, &end, 16);
+		if (*end) {
+			run_command(s, 0);
+			return video_fb_address;
+		}
 
 		if (video_display_bitmap (addr, 0, 0) == 0) {
 			return ((void *) (video_fb_address));
