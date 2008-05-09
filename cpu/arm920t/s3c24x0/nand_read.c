@@ -59,7 +59,7 @@ static inline void nand_wait(void)
 #if defined(CONFIG_S3C2410)
 /* configuration for 2410 with 512byte sized flash */
 #define NAND_PAGE_SIZE		512
-#define BAD_BLOCK_OFFSET	517
+#define BAD_BLOCK_OFFSET	5
 #define NAND_BLOCK_MASK		(NAND_PAGE_SIZE - 1)
 #define NAND_BLOCK_SIZE		0x4000
 #else
@@ -80,8 +80,6 @@ static int is_bad_block(unsigned long i)
 {
 	unsigned char data;
 	unsigned long page_num;
-
-	/* FIXME: do this twice, for first and second page in block */
 
 	nand_clear_RnB();
 #if (NAND_PAGE_SIZE == 512)
@@ -167,8 +165,9 @@ int nand_read_ll(unsigned char *buf, unsigned long start_addr, int size)
 
 	for (i=start_addr; i < (start_addr + size);) {
 #ifdef CONFIG_S3C2410_NAND_SKIP_BAD
-		if (start_addr % NAND_BLOCK_SIZE == 0) {
-			if (is_bad_block(i)) {
+		if (i % NAND_BLOCK_SIZE == 0) {
+			if (is_bad_block(i) ||
+			    is_bad_block(i + NAND_PAGE_SIZE)) {
 				/* Bad block */
 				i += NAND_BLOCK_SIZE;
 				size += NAND_BLOCK_SIZE;
