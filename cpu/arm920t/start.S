@@ -633,11 +633,36 @@ may_resume:
 1:	subs	r1, r1, #1
 	bpl	1b
 
+	/* capture full EINT situation into gstatus 4 */
+
+	ldr	r0, =0x4A000000 /* SRCPND */
+	ldr	r1, [ r0 ]
+	and	r1, r1, #0xf
+
+	ldr	r0, =0x560000BC /* gstatus4 */
+	str	r1, [ r0 ]
+
+	ldr	r0, =0x560000A8 /* EINTPEND */
+	ldr	r1, [ r0 ]
+	ldr	r0, =0xfff0
+	and	r1, r1, r0
+	ldr	r0, =0x560000BC /* gstatus4 */
+	ldr     r0, [ r0 ]
+	orr	r1, r1, r0
+	ldr	r0, =0x560000BC /* gstatus4 */
+	str	r1, [ r0 ]
+
 	/* test for resume */
+
 	ldr	r1, =0x560000B4		/* gstatus2 */
 	ldr	r0, [ r1 ]
 	tst	r0, #0x02		/* is this resume from power down */
-	ldrne	pc, [r1, #4]		/* gstatus3 */
+					/* well, if it was, we are going to jump to
+					 * whatever address we stashed in gstatus3,
+					 * and gstatus4 will hold the wake interrupt
+					 * source for the OS to look at
+					 */
+	ldrne	pc, [r1, #4]
 #endif /* CONFIG_S3C2410 || CONFIG_S3C244 || CONFIG_S3C2442 */
 #endif /* CONFIG_SKIP_LOWLEVEL_INIT */
 
