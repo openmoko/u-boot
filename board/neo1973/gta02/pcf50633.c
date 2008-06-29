@@ -18,7 +18,7 @@ const u_int8_t pcf50633_initial_regs[__NUM_PCF50633_REGS] = {
 	[PCF50633_REG_OOCTIM1]	= 0xaa,	/* debounce 14ms everything */
 	[PCF50633_REG_OOCTIM2]	= 0x4a,
 	[PCF50633_REG_OOCMODE]	= 0x55,
-	[PCF50633_REG_OOCCTL]	= 0x44,
+	[PCF50633_REG_OOCCTL]	= 0x47,
 
 	[PCF50633_REG_GPIOCTL]	= 0x01,	/* only GPIO1 is input */
 	[PCF50633_REG_GPIO2CFG]	= 0x00,
