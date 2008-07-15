@@ -359,6 +359,8 @@ static void pcf50633_late_init(void)
 	pcf50633_reg_write(PCF50633_REG_LDO2ENA, 2); /* enabled if GPIO1 = H */
 	pcf50633_reg_write(PCF50633_REG_LDO5ENA, recent);
 	pcf50633_reg_write(PCF50633_REG_LDO6ENA, recent);
+
+	pcf50633_reg_write(PCF50633_REG_MBCC5, 0xff); /* 1A USB fast charge */
 }
 
 int board_late_init(void)
