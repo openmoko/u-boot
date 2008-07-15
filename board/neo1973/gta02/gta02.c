@@ -103,16 +103,18 @@ enum gta02_led {
  * Miscellaneous platform dependent initialisations
  */
 
-int board_init(void)
+static void cpu_speed(int mdiv, int pdiv, int sdiv, int clkdivn)
 {
 	S3C24X0_CLOCK_POWER * const clk_power = S3C24X0_GetBase_CLOCK_POWER();
-	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+
+	/* clock divide */
+	clk_power->CLKDIVN = clkdivn;
 
 	/* to reduce PLL lock time, adjust the LOCKTIME register */
 	clk_power->LOCKTIME = 0xFFFFFF;
 
 	/* configure MPLL */
-	clk_power->MPLLCON = ((M_MDIV << 12) + (M_PDIV << 4) + M_SDIV);
+	clk_power->MPLLCON = ((mdiv << 12) + (pdiv << 4) + sdiv);
 
 	/* some delay between MPLL and UPLL */
 	delay (4000);
@@ -120,11 +122,16 @@ int board_init(void)
 	/* configure UPLL */
 	clk_power->UPLLCON = ((U_M_MDIV << 12) + (U_M_PDIV << 4) + U_M_SDIV);
 
-	/* clock divide */
-	clk_power->CLKDIVN = 0x05; /* 1:4:8 */
-
 	/* some delay between MPLL and UPLL */
 	delay (8000);
+}
+
+int board_init(void)
+{
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+
+	/* FCLK = 200MHz values from cpu/arm920t/start.S */
+	cpu_speed(142, 7, 1, 3); /* 200MHZ, 1:2:4 */
 
 	/* set up the I/O ports */
 #if CONFIG_GTA02_REVISION == 1
@@ -437,6 +444,7 @@ int board_late_init(void)
 
 	wait_for_power();
 	pcf50633_late_init();
+	cpu_speed(M_MDIV, M_PDIV, M_SDIV, 5); /* 400MHZ, 1:4:8 */
 
 	/* issue a short pulse with the vibrator */
 	neo1973_led(GTA02_LED_AUX_RED, 1);
