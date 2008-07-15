@@ -47,7 +47,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define POWER_KEY_SECONDS	1
 
 /* If the battery voltage is below this, we can't provide stable power */
-#define	SAVE_POWER_MILLIVOLT	3600
+#define	SAFE_POWER_MILLIVOLT	3400
 
 #if defined(CONFIG_ARCH_GTA02_v1)
 //#define M_MDIV	0x7f		/* Fout = 405.00MHz */
@@ -376,12 +376,15 @@ static void cpu_idle(void)
 
 static int battery_is_good(void)
 {
-	/* battery is present -> try to boot */
-	return !(pcf50633_reg_read(PCF50633_REG_BVMCTL) & 1);
-/*
- * Consider adding this later to the above condition:
-	    pcf50633_read_battvolt() >= SAVE_POWER_MILLIVOLT)
- */
+	/* battery is absent -> don't boot */
+	if (pcf50633_reg_read(PCF50633_REG_BVMCTL) & 1)
+		return 0;
+
+	/* we could try to boot, but we'll probably die on the way */
+	if (pcf50633_read_battvolt() < SAFE_POWER_MILLIVOLT)
+		return 0;
+
+	return 1;
 }
 
 static void wait_for_power(void)
