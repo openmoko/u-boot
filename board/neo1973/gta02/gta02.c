@@ -639,7 +639,6 @@ void neo1973_led(int led, int on)
 {
 	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
 
-	printf("switching led %u %u\n", led, on);
 	if (led > 2)
 		return;
 
