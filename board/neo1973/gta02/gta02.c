@@ -374,19 +374,22 @@ static void cpu_idle(void)
 	local_irq_restore(flags);
 }
 
+static int battery_is_good(void)
+{
+	/* battery is present -> try to boot */
+	return !(pcf50633_reg_read(PCF50633_REG_BVMCTL) & 1);
+/*
+ * Consider adding this later to the above condition:
+	    pcf50633_read_battvolt() >= SAVE_POWER_MILLIVOLT)
+ */
+}
+
 static void wait_for_power(void)
 {
 	int seconds = 0;
+	int led_cycle = 1;
 
 	while (1) {
-		/* battery is present -> try to boot */
-		if (!(pcf50633_reg_read(PCF50633_REG_BVMCTL) & 1))
-			break;
-/*
- * Consider adding this later to the above condition:
-		    pcf50633_read_battvolt() >= SAVE_POWER_MILLIVOLT)
- */
-
 		poll_charger();
 
 		/* we have plenty of external power -> try to boot */
@@ -395,8 +398,17 @@ static void wait_for_power(void)
 
 		cpu_idle();
 
-		if (neo1973_new_second())
+		if (neo1973_new_second()) {
+			/*
+			 * Probe the battery only if the current LED cycle is
+			 * about to end, so that it had time to discharge.
+			 */
+			if (led_cycle && battery_is_good())
+				break;
 			seconds++;
+		}
+
+		led_cycle = !seconds || (seconds & 1);
 
 		/*
 		 * Blink the AUX LED, unless it's broken (which is the case in
@@ -404,8 +416,10 @@ static void wait_for_power(void)
 		 * can't afford in this delicate situation.
 		 */
 		if (gta02_revision > 5)
-			neo1973_led(GTA02_LED_AUX_RED,
-			    !seconds || (seconds & 1));
+			neo1973_led(GTA02_LED_AUX_RED, led_cycle);
+
+		/* alternate LED and charger cycles */
+		pcf50633_reg_set_bit_mask(PCF50633_REG_MBCC1, 1, !led_cycle);
 	}
 
 	/* switch off the AUX LED */
@@ -428,6 +442,8 @@ static void pcf50633_late_init(void)
 	pcf50633_reg_write(PCF50633_REG_LDO6ENA, recent);
 
 	pcf50633_reg_write(PCF50633_REG_MBCC5, 0xff); /* 1A USB fast charge */
+
+	pcf50633_reg_set_bit_mask(PCF50633_REG_MBCC1, 1, 1); /* charge ! */
 }
 
 int board_late_init(void)
