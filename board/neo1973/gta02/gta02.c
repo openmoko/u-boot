@@ -398,8 +398,14 @@ static void wait_for_power(void)
 		if (neo1973_new_second())
 			seconds++;
 
-		/* blink the AUX LED */
-		neo1973_led(GTA02_LED_AUX_RED, !seconds || (seconds & 1));
+		/*
+		 * Blink the AUX LED, unless it's broken (which is the case in
+		 * GTA02v5 it is) and draws excessive current, which we just
+		 * can't afford in this delicate situation.
+		 */
+		if (gta02_revision > 5)
+			neo1973_led(GTA02_LED_AUX_RED,
+			    !seconds || (seconds & 1));
 	}
 
 	/* switch off the AUX LED */
