@@ -34,6 +34,7 @@
 #include <s3c2440.h>
 #include <i2c.h>
 #include <bootmenu.h>
+#include <asm/atomic.h>
 
 #include "../common/neo1973.h"
 #include "../common/jbt6k74.h"
@@ -316,6 +317,56 @@ static void poll_charger(void)
 		pcf50633_usb_maxcurrent(1000);
 }
 
+static int have_int(uint8_t mask1, uint8_t mask2);
+
+static void clear_pmu_int(void)
+{
+	S3C24X0_INTERRUPT * const intr = S3C24X0_GetBase_INTERRUPT();
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+
+	/* read the PMU's interrupt register and store what we found for later
+	   use */
+	have_int(0, 0);
+
+	/* clear EINT9/GPG1 in the MCU's interrupt path */
+	gpio->EINTPEND = 1 << 9;
+	intr->SRCPND = BIT_EINT8_23;
+	intr->INTPND = BIT_EINT8_23;
+}
+
+static void cpu_idle(void)
+{
+	S3C24X0_INTERRUPT * const intr = S3C24X0_GetBase_INTERRUPT();
+	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+	S3C24X0_CLOCK_POWER * const clk = S3C24X0_GetBase_CLOCK_POWER();
+	unsigned long flags;
+
+	/*
+	 * We don't want to execute interrupts throughout all this, since
+	 * u-boot's interrupt handling code isn't modular, and getting a "real"
+	 * interrupt without clearing it in the interrupt handler would cause
+	 * us to loop permanently.
+	 */
+	local_irq_save(flags);
+
+	/* enable PMU interrupts */
+	intr->INTMSK &= ~BIT_EINT8_23;
+	gpio->EINTMASK &= ~(1 << 9);
+
+	/* go idle */
+	clk->CLKCON |= 1 << 2;
+
+	 /* disable PMU interrupts */
+	intr->INTMSK |= BIT_EINT8_23;
+	gpio->EINTMASK |= 1 << 9;
+
+	/* collect PMU interrupts and clear them */
+	clear_pmu_int();
+
+	/* we're safe now */
+	local_irq_restore(flags);
+}
+
 static void wait_for_power(void)
 {
 	int seconds = 0;
@@ -334,6 +385,8 @@ static void wait_for_power(void)
 		/* we have plenty of external power -> try to boot */
 		if (pcf50633_usb_last_maxcurrent >= 500)
 			break;
+
+		cpu_idle();
 
 		if (neo1973_new_second())
 			seconds++;
