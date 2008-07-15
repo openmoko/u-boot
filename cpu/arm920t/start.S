@@ -217,7 +217,7 @@ copyex:
 # define INTSUBMSK_val        0xffff
 # if (CONFIG_SYS_CLK_FREQ == 12000000)
 #  define MPLLCON_val ((142 << 12) + (7 << 4) + 1)
-#  define UPLLCON_val   (( 88 << 12) + (8 << 4) + 2)
+#  define UPLLCON_val   (( 88 << 12) + (4 << 4) + 2)
 # elif (CONFIG_SYS_CLK_FREQ == 16934400)
 #  define MPLLCON_val   ((181 << 12) + (14<< 4) + 1)
 #  define UPLLCON_val   (( 26 << 12) + (4 << 4) + 1)
