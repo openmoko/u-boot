@@ -67,6 +67,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #endif
 
 extern void smedia3362_lcm_reset(int);
+extern void glamo_core_init(void);
 
 unsigned int neo1973_wakeup_cause;
 extern unsigned char booted_from_nand;
@@ -451,6 +452,7 @@ woken_by_reset:
 
 continue_boot:
 	enter_bootmenu = menu_vote > 0 || booted_from_nor;
+	glamo_core_init();
 	smedia3362_lcm_reset(1);
 	if (!enter_bootmenu && getenv("splashimage"))
 		run_command(getenv("splashimage"), 0);

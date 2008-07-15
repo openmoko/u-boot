@@ -163,7 +163,7 @@ void glamofb_cmd_write(u_int16_t val)
 	glamo_reg_write(GLAMO_REGOFS_LCD + GLAMO_REG_LCD_COMMAND1, val);
 }
 
-static void glamo_core_init(void)
+void glamo_core_init(void)
 {
 	int bp;
 
@@ -213,8 +213,6 @@ void * video_hw_init(void)
 		glamo_reg_read(GLAMO_REG_DEVICE_ID),
 		glamo_reg_read(GLAMO_REG_REVISION_ID));
 
-	glamo_core_init();
-
 	pGD->winSizeX = pGD->plnSizeX = 480;
 	pGD->winSizeY = pGD->plnSizeY = 640;
 	pGD->gdfBytesPP = 2;
@@ -222,17 +220,6 @@ void * video_hw_init(void)
 
 	pGD->frameAdrs = CONFIG_GLAMO_BASE + 0x00800000;
 	pGD->memSize = 0x200000; /* 480x640x16bit = 614400 bytes */
-
-#ifdef CONFIG_GTA02_REVISION_do_this_in_board_late_init
-	/* bring up the LCM */
-	smedia3362_lcm_reset(1);
-	if (getenv("splashimage"))
-		run_command(getenv("splashimage"), 0);
-	jbt6k74_enter_state(JBT_STATE_NORMAL);
-	jbt6k74_display_onoff(1);
-	/* switch on the backlight */
-	neo1973_backlight(1);
-#endif
 
 	return &smi;
 }
