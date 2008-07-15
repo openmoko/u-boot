@@ -345,6 +345,22 @@ static void wait_for_power(void)
 	neo1973_led(GTA02_LED_AUX_RED, 0);
 }
 
+static void pcf50633_late_init(void)
+{
+#ifdef CONFIG_ARCH_GTA02_v1
+	uint8_t pwren = 1;	/* always on */
+	uint8_t recent = 0;	/* antiques don't have that */
+#else
+	uint8_t pwren = 2;	/* enabled if GPIO1 = HIGH */
+	uint8_t recent = 1;	/* always on */
+#endif
+
+	pcf50633_reg_write(PCF50633_REG_LDO1ENA, pwren);
+	pcf50633_reg_write(PCF50633_REG_LDO2ENA, 2); /* enabled if GPIO1 = H */
+	pcf50633_reg_write(PCF50633_REG_LDO5ENA, recent);
+	pcf50633_reg_write(PCF50633_REG_LDO6ENA, recent);
+}
+
 int board_late_init(void)
 {
 	S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
@@ -364,6 +380,7 @@ int board_late_init(void)
 	int2 = pcf50633_reg_read(PCF50633_REG_INT2);
 
 	wait_for_power();
+	pcf50633_late_init();
 
 	/* issue a short pulse with the vibrator */
 	neo1973_led(GTA02_LED_AUX_RED, 1);

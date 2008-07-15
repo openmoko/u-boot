@@ -63,14 +63,10 @@ const u_int8_t pcf50633_initial_regs[__NUM_PCF50633_REGS] = {
 	[PCF50633_REG_LEDDIM]	= 0x20,	/* dimming curve */
 
 	[PCF50633_REG_LDO1OUT]	= 0x18,	/* 3.3V (24 * 0.1V + 0.9V) */
-#ifdef CONFIG_ARCH_GTA02_v1
-	[PCF50633_REG_LDO1ENA]	= 0x01,	/* always on */
-#else
-	[PCF50633_REG_LDO1ENA]	= 0x02, /* enabled if GPIO1 = HIGH */
-#endif
+	[PCF50633_REG_LDO1ENA]	= 0x00,	/* GSENSOR_3V3, enable later */
 
 	[PCF50633_REG_LDO2OUT]	= 0x18,	/* 3.3V (24 * 0.1V + 0.9V) */
-	[PCF50633_REG_LDO2ENA]	= 0x02, /* enabled if GPIO1 = HIGH */
+	[PCF50633_REG_LDO2ENA]	= 0x00, /* CODEC_3V3, enable later */
 
 #ifdef CONFIG_ARCH_GTA02_v1
 	[PCF50633_REG_LDO3OUT]	= 0x15,	/* 3.0V (21 * 0.1V + 0.9V) */
@@ -82,19 +78,11 @@ const u_int8_t pcf50633_initial_regs[__NUM_PCF50633_REGS] = {
 
 	[PCF50633_REG_LDO4ENA]	= 0x00,
 
-#ifdef CONFIG_ARCH_GTA02_v1
-	[PCF50633_REG_LDO5ENA]	= 0x00,
-#else
 	[PCF50633_REG_LDO5OUT]	= 0x15, /* 3.0V (21 * 0.1V + 0.9V) */
-	[PCF50633_REG_LDO5ENA]	= 0x01, /* always on */
-#endif
+	[PCF50633_REG_LDO5ENA]	= 0x00, /* RF_3V, enable later  */
 
-#ifdef CONFIG_ARCH_GTA02_v1
-	[PCF50633_REG_LDO6ENA]	= 0x00,
-#else
 	[PCF50633_REG_LDO6OUT]	= 0x15,	/* 3.0V (21 * 0.1V + 0.9V) */
-	[PCF50633_REG_LDO6ENA]	= 0x01,	/* always on */
-#endif
+	[PCF50633_REG_LDO6ENA]	= 0x00,	/* LCM_3V, enable later */
 
 	[PCF50633_REG_HCLDOOUT]	= 0x18,	/* 3.3V (24 * 0.1V + 0.9V) */
 	[PCF50633_REG_HCLDOENA]	= 0x00, /* off by default*/
