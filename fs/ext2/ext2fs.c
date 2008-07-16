@@ -472,7 +472,7 @@ static int ext2fs_iterate_dir (ext2fs_node_t dir, char *name, ext2fs_node_t * fn
 			return (0);
 		}
 		if (dirent.namelen != 0) {
-			char filename[dirent.namelen + 1];
+			char filename[256];
 			ext2fs_node_t fdiro;
 			int type = FILETYPE_UNKNOWN;
 
