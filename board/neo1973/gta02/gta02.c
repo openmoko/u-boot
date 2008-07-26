@@ -311,13 +311,6 @@ static void set_revision(void)
 		}
 	}
 	sprintf(__cfg_prompt, "GTA02v%d # ", gta02_revision);
-
-#if 1 /* remove these after checking that Andy doesn't need them anymore */
-	printf("PCB rev: 0x%03X\n", rev);
-	/* expose in the env so we can add to kernel commandline */
-	sprintf(buf, "0x%03X", rev);
-	setenv("pcb_rev", buf);
-#endif
 }
 
 static void poll_charger(void)
