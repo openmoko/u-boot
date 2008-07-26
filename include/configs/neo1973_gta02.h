@@ -194,7 +194,7 @@ extern char __cfg_prompt[20];
 #define CONFIG_EXTRA_ENV_SETTINGS 					\
 	"usbtty=cdc_acm\0"						\
 	"stderr=usbtty\0stdout=usbtty\0stdin=usbtty\0"			\
-	"bootargs_base=rootfstype=jffs2 root=/dev/mtdblock6 console=ttySAC2,115200 console=tty0 loglevel=8\0" \
+	"bootargs_base=rootfstype=jffs2 root=/dev/mtdblock6 console=ttySAC2,115200 console=tty0 loglevel=8 hardware_ecc=1\0" \
 	""
 #define CONFIG_CMD_LOADENV
 #define CONFIG_CMD_DEFAULTENV
@@ -281,7 +281,7 @@ extern char __cfg_prompt[20];
 #endif
 
 #define CONFIG_S3C2410_NAND_BBT                1
-//#define CONFIG_S3C2410_NAND_HWECC              1
+#define CONFIG_S3C2440_NAND_HWECC              1
 
 #define CONFIG_DRIVER_PCF50633		1
 #define	CONFIG_RTC_PCF50633		1

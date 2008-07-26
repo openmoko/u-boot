@@ -1,6 +1,7 @@
 /*
  * (C) Copyright 2006 OpenMoko, Inc.
  * Author: Harald Welte <laforge@openmoko.org>
+ *         Holger Freyther <zecke@openmoko.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -200,18 +201,50 @@ static int s3c2410_nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
 	return 0;
 }
 
-static int s3c2410_nand_correct_data(struct mtd_info *mtd, u_char *dat,
-				     u_char *read_ecc, u_char *calc_ecc)
+#endif
+
+#ifdef CONFIG_S3C2440_NAND_HWECC
+static void s3c2440_nand_enable_hwecc(struct mtd_info *mtd, int mode)
+{
+	DEBUGN("%s(%p, %d)\n", __func__, mtd, mode);
+
+	/* 
+	 * In software mode, ECC module generates ECC parity code for all
+	 * read / write data. So you have to reset ECC value by writing the
+	 * InitECC(NFCONT[4]) bit as ‘1’ and have to clear theMainECCLock(
+	 * NFCONT[5]) bit to ‘0’(Unlock) before read or write data.
+	 */
+	NFCONT |= S3C2440_NFCONF_INITECC;
+	NFCONT &= ~S3C2440_NFCONF_MAINECCLOCK;
+}
+
+static int s3c2440_nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
+                                      u_char *ecc_code)
+{
+	unsigned long ecc = NFMECC0;
+
+	ecc_code[0] = ecc;
+	ecc_code[1] = ecc >> 8;
+	ecc_code[2] = ecc >> 16;
+
+	DEBUGN("%s(%p,): 0x%02x 0x%02x 0x%02x\n",
+		__func__, mtd , ecc_code[0], ecc_code[1], ecc_code[2]);
+
+	return 0;
+}
+#endif
+
+static int s3c24xx_nand_correct_data_noop(struct mtd_info *mtd, u_char *dat,
+				          u_char *read_ecc, u_char *calc_ecc)
 {
 	if (read_ecc[0] == calc_ecc[0] &&
 	    read_ecc[1] == calc_ecc[1] &&
 	    read_ecc[2] == calc_ecc[2])
 		return 0;
 
-	printf("s3c2410_nand_correct_data: not implemented\n");
+	printf("%s: not implemented\n", __func__);
 	return -1;
 }
-#endif
 
 int board_nand_init(void) __attribute__((weak, alias("__board_nand_init")));
 
@@ -252,11 +285,20 @@ int __board_nand_init(struct nand_chip *nand)
 
 	nand->dev_ready = s3c2410_dev_ready;
 
-#ifdef CONFIG_S3C2410_NAND_HWECC
+#if defined(CONFIG_S3C2410_NAND_HWECC)
 	nand->enable_hwecc = s3c2410_nand_enable_hwecc;
 	nand->calculate_ecc = s3c2410_nand_calculate_ecc;
-	nand->correct_data = s3c2410_nand_correct_data;
+	nand->correct_data = s3c24xx_nand_correct_data_noop;
 	nand->eccmode = NAND_ECC_HW3_512;
+#elif defined(CONFIG_S3C2440_NAND_HWECC)
+	/*
+	 * Assume we have a large page flash and set the eccmode so that it 
+	 * will be compatible with the linux kernel.
+         */
+	nand->enable_hwecc = s3c2440_nand_enable_hwecc;
+	nand->calculate_ecc = s3c2440_nand_calculate_ecc;
+	nand->correct_data = s3c24xx_nand_correct_data_noop;
+	nand->eccmode = NAND_ECC_HW3_256;
 #else
 	nand->eccmode = NAND_ECC_SOFT;
 #endif
