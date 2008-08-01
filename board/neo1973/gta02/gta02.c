@@ -74,6 +74,8 @@ unsigned int neo1973_wakeup_cause;
 extern unsigned char booted_from_nand;
 extern unsigned char booted_from_nor;
 extern int nobootdelay;
+extern int udc_usb_maxcurrent;
+
 char __cfg_prompt[20] = "GTA02vXX # ";
 
 /*
@@ -394,6 +396,10 @@ static void wait_for_power(void)
 
 	while (1) {
 		poll_charger();
+
+		/* track what the time-critical udc callback allows us */
+		if (pcf50633_usb_last_maxcurrent != udc_usb_maxcurrent)
+			pcf50633_usb_maxcurrent(udc_usb_maxcurrent);
 
 		/* we have plenty of external power -> try to boot */
 		if (pcf50633_usb_last_maxcurrent >= 500)
