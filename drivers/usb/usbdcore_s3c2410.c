@@ -140,7 +140,10 @@ static int s3c2410_write_noniso_tx_fifo(struct usb_endpoint_instance *endpoint)
 
 static void s3c2410_deconfigure_device (void)
 {
-	/* FIXME: Implement this */
+	outl(0, S3C2410_UDC_EP1_DMA_CON);
+	outl(0, S3C2410_UDC_EP2_DMA_CON);
+	outl(0, S3C2410_UDC_EP3_DMA_CON);
+	outl(0, S3C2410_UDC_EP4_DMA_CON);
 }
 
 static void s3c2410_configure_device (struct usb_device_instance *device)

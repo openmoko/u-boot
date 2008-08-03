@@ -60,6 +60,8 @@ extern int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 #include <hush.h>
 #endif
 
+extern void udc_disable (void);
+
 DECLARE_GLOBAL_DATA_PTR;
 
 extern int gunzip (void *dst, int dstlen, unsigned char *src, unsigned long *lenp);
@@ -228,6 +230,11 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 #ifdef CONFIG_DEPOWER_MMC_ON_BOOT
 	mmc_depower();
+#endif
+
+#if (defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440) || \
+     defined(CONFIG_S3C2442) || defined(CONFIG_S3C2443)) && defined(CONFIG_USB_DEVICE)
+	udc_disable();
 #endif
 
 	/*
