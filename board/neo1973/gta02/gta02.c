@@ -535,7 +535,12 @@ woken_by_reset:
 
 	while (neo1973_wakeup_cause == NEO1973_WAKEUP_RESET ||
 	    neo1973_on_key_pressed()) {
-		if (neo1973_aux_key_pressed())
+        char *s = getenv("stop_in_menu");
+
+        /* If the AUX key is pressed or the stop_in_menu environment
+         * variable is set, enter the boot menu */
+        if (neo1973_aux_key_pressed() ||
+        		(s && strcmp(s, "yes") == 0) )
 			menu_vote++;
 		else
 			menu_vote--;
