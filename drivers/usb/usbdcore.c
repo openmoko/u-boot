@@ -616,7 +616,13 @@ void usbd_device_event_irq (struct usb_device_instance *device, usb_device_event
 
 	state = device->device_state;
 
+#if 0
+	/* we can't afford sitting here and printing stuff.  This code can run
+	 * in a time-critical context and printing stuff is a synchronous
+	 * serial activity... bad things can happen to USB peripheral
+	 */
 	usbinfo("%s", usbd_device_events[event]);
+#endif
 
 	switch (event) {
 	case DEVICE_UNKNOWN:

@@ -191,7 +191,7 @@ static void s3c2410_udc_ep0(void)
 
 	/* clear stall status */
 	if (ep0csr & S3C2410_UDC_EP0_CSR_SENTSTL) {
-	    	serial_printf("Clearing SENT_STALL\n");
+	    	/* serial_printf("Clearing SENT_STALL\n"); */
 		clear_ep0_sst();
 		if (ep0csr & S3C2410_UDC_EP0_CSR_SOPKTRDY)
 			clear_ep0_opr();
@@ -202,7 +202,7 @@ static void s3c2410_udc_ep0(void)
 	/* clear setup end */
 	if (ep0csr & S3C2410_UDC_EP0_CSR_SE
 	    /* && ep0->state != EP0_IDLE */) {
-	    	serial_printf("Clearing SETUP_END\n");
+	    	/* serial_printf("Clearing SETUP_END\n"); */
 		clear_ep0_se();
 #if 1
 		if (ep0csr & S3C2410_UDC_EP0_CSR_SOPKTRDY) {

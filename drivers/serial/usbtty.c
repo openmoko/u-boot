@@ -1162,7 +1162,13 @@ static void usbtty_event_handler (struct usb_device_instance *device,
 		usbtty_configured_flag = 0;
 		break;
 	case DEVICE_CONFIGURED:
-		printf("DEVICE_CONFIGURED: %u\n", device->configuration);
+#if 0
+	/* we can't afford sitting here and printing stuff.  This code runs
+	 * in a time-critical context and printing stuff is a synchronous
+	 * serial activity... bad things can happen to USB peripheral
+	 */
+	printf("DEVICE_CONFIGURED: %u\n", device->configuration);
+#endif
 		if (device->configuration == 1)
 			udc_ctrl(UDC_CTRL_500mA_ENABLE, 1);
 		else
@@ -1170,7 +1176,13 @@ static void usbtty_event_handler (struct usb_device_instance *device,
 		usbtty_configured_flag = 1;
 		break;
 	case DEVICE_DE_CONFIGURED:
-		printf("DEVICE_DE_CONFIGURED\n");
+#if 0
+	/* we can't afford sitting here and printing stuff.  This code runs
+	 * in a time-critical context and printing stuff is a synchronous
+	 * serial activity... bad things can happen to USB peripheral
+	 */
+		printf("DEVICE_DECONFIGURED: %u\n", device->configuration);
+#endif
 		udc_ctrl(UDC_CTRL_500mA_ENABLE, 0);
 		break;
 	case DEVICE_ADDRESS_ASSIGNED:
