@@ -405,7 +405,13 @@ static void wait_for_power(void)
 		if (pcf50633_usb_last_maxcurrent >= 500)
 			break;
 
-		cpu_idle();
+		/* cpu_idle sits with interrupts off destroying USB operation
+		 * don't run it unless we are in trouble
+		 */
+		if (!battery_is_good())
+			cpu_idle();
+		else
+			udelay(1000000);
 
 		if (neo1973_new_second()) {
 			/*
