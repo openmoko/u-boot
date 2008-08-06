@@ -59,7 +59,7 @@ const u_int8_t pcf50633_initial_regs[__NUM_PCF50633_REGS] = {
 
 	[PCF50633_REG_LEDOUT]	= 0x2f,	/* full backlight power */
 	[PCF50633_REG_LEDENA]	= 0x00,	/* disabled */
-	[PCF50633_REG_LEDCTL]	= 0x05, /* ovp enabled, ocp 500mA */
+	[PCF50633_REG_LEDCTL]	= 0x01, /* ovp enabled, 1A current limit */
 	[PCF50633_REG_LEDDIM]	= 0x20,	/* dimming curve */
 
 	[PCF50633_REG_LDO1OUT]	= 0x18,	/* 3.3V (24 * 0.1V + 0.9V) */
