@@ -469,6 +469,7 @@ int board_late_init(void)
 	int menu_vote = 0; /* <= 0: no, > 0: yes */
 	int seconds = 0;
 	int enter_bootmenu;
+	char *env_stop_in_menu;
 
 	set_revision();
 
@@ -535,12 +536,8 @@ woken_by_reset:
 
 	while (neo1973_wakeup_cause == NEO1973_WAKEUP_RESET ||
 	    neo1973_on_key_pressed()) {
-        char *s = getenv("stop_in_menu");
 
-        /* If the AUX key is pressed or the stop_in_menu environment
-         * variable is set, enter the boot menu */
-        if (neo1973_aux_key_pressed() ||
-        		(s && strcmp(s, "yes") == 0) )
+        if (neo1973_aux_key_pressed())
 			menu_vote++;
 		else
 			menu_vote--;
@@ -554,6 +551,12 @@ woken_by_reset:
 	neo1973_poweroff();
 
 continue_boot:
+	env_stop_in_menu = getenv("stop_in_menu");
+	/* If the stop_in_menu environment variable is set, enter the
+	 * boot menu */
+	if (env_stop_in_menu && strcmp(env_stop_in_menu, "yes") == 0)
+		menu_vote = 1;
+
 	enter_bootmenu = menu_vote > 0 || booted_from_nor;
 	glamo_core_init();
 	smedia3362_lcm_reset(1);
