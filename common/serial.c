@@ -29,7 +29,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #if defined(CONFIG_SERIAL_MULTI)
 
-static struct serial_device *serial_devices = NULL;
+struct serial_device *serial_devices = NULL;
 static struct serial_device *serial_current = NULL;
 
 #if !defined(CONFIG_LWMON) && !defined(CONFIG_PXA27X)

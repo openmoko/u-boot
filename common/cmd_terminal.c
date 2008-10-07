@@ -27,8 +27,20 @@
 #include <common.h>
 #include <command.h>
 #include <devices.h>
+#include <serial.h>
 
 #if defined(CONFIG_CMD_TERMINAL)
+
+static void init_serial_by_name(char *name)
+{
+	struct serial_device *ser;
+	for (ser = serial_devices; ser; ser = ser->next) {
+		if (!strcmp(ser->name, name)) {
+			ser->init();
+			return;
+		}
+	}
+}
 
 int do_terminal(cmd_tbl_t * cmd, int flag, int argc, char *argv[])
 {
@@ -58,6 +70,7 @@ int do_terminal(cmd_tbl_t * cmd, int flag, int argc, char *argv[])
 		neo1973_gta01_serial0_gsm(1);
 #endif
 
+	init_serial_by_name(dev->name);
 	//serial_reinit_all();
 	printf("Entering terminal mode for port %s\n", dev->name);
 	puts("Use '~.' to leave the terminal and get back to u-boot\n");

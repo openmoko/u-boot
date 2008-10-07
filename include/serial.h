@@ -52,4 +52,8 @@ extern void serial_devices_init(void);
 extern int serial_assign(char * name);
 extern void serial_reinit_all(void);
 
+#if defined(CONFIG_SERIAL_MULTI)
+extern struct serial_device *serial_devices;
+#endif /* CONFIG_SERIAL_MULTI */
+
 #endif
