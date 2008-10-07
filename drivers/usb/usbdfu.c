@@ -259,18 +259,17 @@ static int erase_tail_clean_nand(struct urb *urb, struct dnload_state *ds)
 }
 
 /* Read the next erase blcok from NAND into buffer */
-static int read_next_nand(struct urb *urb, struct dnload_state *ds)
+static int read_next_nand(struct urb *urb, struct dnload_state *ds, int len)
 {
 	struct usb_device_instance *dev = urb->device;
 	int rc;
 
 	ds->read_opts.buffer = ds->buf;
-	ds->read_opts.length = ds->nand->erasesize;
+	ds->read_opts.length = len;
 	ds->read_opts.offset = ds->off;
 	ds->read_opts.quiet = 1;
 
-	debug("Reading 0x%x@0x%x to 0x%08p\n", ds->nand->erasesize,
-		ds->off, ds->buf);
+	debug("Reading 0x%x@0x%x to 0x%08p\n", len, ds->off, ds->buf);
 	rc = nand_read_opts(ds->nand, &ds->read_opts);
 	if (rc) {
 		debug("Error reading\n");
@@ -278,7 +277,7 @@ static int read_next_nand(struct urb *urb, struct dnload_state *ds)
 		dev->dfu_status = DFU_STATUS_errWRITE;
 		return RET_STALL;
 	}
-	ds->off += ds->nand->erasesize;
+	ds->off += len;
 	ds->ptr = ds->buf;
 
 	return RET_NOTHING;
@@ -498,9 +497,6 @@ static int handle_upload(struct urb *urb, u_int16_t val, u_int16_t len, int firs
 				return -EINVAL;
 			printf("Starting DFU Upload of partition '%s'\n",
 				ds->part->name);
-			rc = read_next_nand(urb, ds);
-			if (rc)
-				return -EINVAL;
 		}
 
 		if (len > ds->nand->erasesize) {
@@ -509,27 +505,19 @@ static int handle_upload(struct urb *urb, u_int16_t val, u_int16_t len, int firs
 			len = ds->nand->erasesize;
 		}
 
-		remain = ds->nand->erasesize - (ds->ptr - ds->buf);
-		if (len < remain)
-			remain = len;
+		/* limit length to whatever number of bytes is left in
+		 * this partition */
+		remain = (ds->part->offset + ds->part->size) - ds->off;
+		if (len > remain)
+			len = remain;
 
-		debug("copying %u bytes ", remain);
-		urb->buffer = ds->ptr;
-		ds->ptr += remain;
-		urb->actual_length = remain;
+		rc = read_next_nand(urb, ds, len);
+		if (rc)
+			return -EINVAL;
 
-		if (ds->ptr >= ds->buf + ds->nand->erasesize &&
-		    ds->off < ds->part->offset + ds->part->size) {
-			rc = read_next_nand(urb, ds);
-			if (rc)
-				return -EINVAL;
-			if (len > remain) {
-				debug("copying another %u bytes ", len - remain);
-				memcpy(urb->buffer + remain, ds->ptr, len - remain);
-				ds->ptr += (len - remain);
-				urb->actual_length += (len - remain);
-			}
-		}
+		debug("uploading %u bytes ", len);
+		urb->buffer = ds->buf;
+		urb->actual_length = len;
 		break;
 	}
 
