@@ -324,6 +324,9 @@ static void poll_charger(void)
 {
 	if (pcf50633_read_charger_type() == 1000)
 		pcf50633_usb_maxcurrent(1000);
+	else /* track what the time-critical udc callback allows us */
+		if (pcf50633_usb_last_maxcurrent != udc_usb_maxcurrent)
+		pcf50633_usb_maxcurrent(udc_usb_maxcurrent);
 }
 
 static int have_int(uint8_t mask1, uint8_t mask2);
@@ -376,6 +379,24 @@ static void cpu_idle(void)
 	local_irq_restore(flags);
 }
 
+static int charger_is_present(void)
+{
+	/* is charger or power adapter present? */
+	if (pcf50633_reg_read(PCF50633_REG_MBCS1) & 3)
+		return 1;
+
+	return 0;
+}
+
+static int battery_is_present(void)
+{
+	/* battery is absent -> don't boot */
+	if (pcf50633_reg_read(PCF50633_REG_BVMCTL) & 1)
+		return 0;
+
+	return 1;
+}
+
 static int battery_is_good(void)
 {
 	/* battery is absent -> don't boot */
@@ -389,20 +410,22 @@ static int battery_is_good(void)
 	return 1;
 }
 
-static void wait_for_power(void)
+static int wait_for_power(void)
 {
+	/*
+	 * TODO: this function should also check if charger is still attached
+	 * it makes no sense to wait otherwise.
+	*/
+
 	int seconds = 0;
 	int led_cycle = 1;
+	int power = 1;
 
 	while (1) {
 		poll_charger();
 
-		/* track what the time-critical udc callback allows us */
-		if (pcf50633_usb_last_maxcurrent != udc_usb_maxcurrent)
-			pcf50633_usb_maxcurrent(udc_usb_maxcurrent);
-
-		/* we have plenty of external power -> try to boot */
-		if (pcf50633_usb_last_maxcurrent >= 500)
+		/* we have plenty of external power but no battery -> try to boot */
+		if (!battery_is_present() && (pcf50633_usb_last_maxcurrent >= 500))
 			break;
 
 		/* cpu_idle sits with interrupts off destroying USB operation
@@ -420,6 +443,13 @@ static void wait_for_power(void)
 			 */
 			if (led_cycle && battery_is_good())
 				break;
+
+			/* check if charger is present, otherwise stop start up */
+			if (!charger_is_present())
+			{
+				power = 0;
+				break;
+			}
 			seconds++;
 		}
 
@@ -435,10 +465,16 @@ static void wait_for_power(void)
 
 		/* alternate LED and charger cycles */
 		pcf50633_reg_set_bit_mask(PCF50633_REG_MBCC1, 1, !led_cycle);
+
+                /* cancel shutdown timer to keep charging */
+                pcf50633_reg_write(PCF50633_REG_OOCSHDWN, 4);
 	}
 
 	/* switch off the AUX LED */
 	neo1973_led(GTA02_LED_AUX_RED, 0);
+
+	/* do we have power now? */
+	return power;
 }
 
 static void pcf50633_late_init(void)
@@ -479,26 +515,6 @@ int board_late_init(void)
 	/* obtain wake-up reason */
 	int1 = pcf50633_reg_read(PCF50633_REG_INT1);
 	int2 = pcf50633_reg_read(PCF50633_REG_INT2);
-
-	wait_for_power();
-	pcf50633_late_init();
-	cpu_speed(M_MDIV, M_PDIV, M_SDIV, 5); /* 400MHZ, 1:4:8 */
-
-	/* issue a short pulse with the vibrator */
-	neo1973_led(GTA02_LED_AUX_RED, 1);
-	neo1973_vibrator(1);
-	udelay(20000);
-	neo1973_led(GTA02_LED_AUX_RED, 0);
-	neo1973_vibrator(0);
-
-#if defined(CONFIG_ARCH_GTA02_v1)
-	/* Glamo3362 reset and power cycle */
-	gpio->GPJDAT &= ~0x000000001;	/* GTA02v1_GPIO_3D_RESET */
-	pcf50633_reg_write(PCF50633_REG_DOWN2ENA, 0);
-	udelay(50*1000);
-	pcf50633_reg_write(PCF50633_REG_DOWN2ENA, 0x2);
-	gpio->GPJDAT |= 0x000000001;	/* GTA02v1_GPIO_3D_RESET */
-#endif
 
 	/* if there's no other reason, must be regular reset */
 	neo1973_wakeup_cause = NEO1973_WAKEUP_RESET;
@@ -551,6 +567,29 @@ woken_by_reset:
 	neo1973_poweroff();
 
 continue_boot:
+	/* Power off if no battery is present and only 100mA is available */
+	if (!wait_for_power())
+		neo1973_poweroff();
+
+	pcf50633_late_init();
+	cpu_speed(M_MDIV, M_PDIV, M_SDIV, 5); /* 400MHZ, 1:4:8 */
+
+	/* issue a short pulse with the vibrator */
+	neo1973_led(GTA02_LED_AUX_RED, 1);
+	neo1973_vibrator(1);
+	udelay(20000);
+	neo1973_led(GTA02_LED_AUX_RED, 0);
+	neo1973_vibrator(0);
+
+#if defined(CONFIG_ARCH_GTA02_v1)
+	/* Glamo3362 reset and power cycle */
+	gpio->GPJDAT &= ~0x000000001;	/* GTA02v1_GPIO_3D_RESET */
+	pcf50633_reg_write(PCF50633_REG_DOWN2ENA, 0);
+	udelay(50*1000);
+	pcf50633_reg_write(PCF50633_REG_DOWN2ENA, 0x2);
+	gpio->GPJDAT |= 0x000000001;	/* GTA02v1_GPIO_3D_RESET */
+#endif
+
 	env_stop_in_menu = getenv("stop_in_menu");
 	/* If the stop_in_menu environment variable is set, enter the
 	 * boot menu */
