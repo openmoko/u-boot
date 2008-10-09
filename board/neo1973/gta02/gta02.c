@@ -326,7 +326,7 @@ static void poll_charger(void)
 		pcf50633_usb_maxcurrent(1000);
 	else /* track what the time-critical udc callback allows us */
 		if (pcf50633_usb_last_maxcurrent != udc_usb_maxcurrent)
-		pcf50633_usb_maxcurrent(udc_usb_maxcurrent);
+			pcf50633_usb_maxcurrent(udc_usb_maxcurrent);
 }
 
 static int have_int(uint8_t mask1, uint8_t mask2);
@@ -382,25 +382,19 @@ static void cpu_idle(void)
 static int charger_is_present(void)
 {
 	/* is charger or power adapter present? */
-	if (pcf50633_reg_read(PCF50633_REG_MBCS1) & 3)
-		return 1;
-
-	return 0;
+	return  !!(pcf50633_reg_read(PCF50633_REG_MBCS1) & 3);
 }
 
 static int battery_is_present(void)
 {
-	/* battery is absent -> don't boot */
-	if (pcf50633_reg_read(PCF50633_REG_BVMCTL) & 1)
-		return 0;
-
-	return 1;
+	/* battery less than bvmlvl -> don't boot */
+	return !(pcf50633_reg_read(PCF50633_REG_BVMCTL) & 1);
 }
 
 static int battery_is_good(void)
 {
 	/* battery is absent -> don't boot */
-	if (pcf50633_reg_read(PCF50633_REG_BVMCTL) & 1)
+	if (!battery_is_present())
 		return 0;
 
 	/* we could try to boot, but we'll probably die on the way */
@@ -424,7 +418,8 @@ static int wait_for_power(void)
 	while (1) {
 		poll_charger();
 
-		/* we have plenty of external power but no battery -> try to boot */
+		/* we have plenty of external power but no visible battery ->
+		 * don't hang around trying to charge, try to boot */
 		if (!battery_is_present() && (pcf50633_usb_last_maxcurrent >= 500))
 			break;
 
@@ -445,8 +440,7 @@ static int wait_for_power(void)
 				break;
 
 			/* check if charger is present, otherwise stop start up */
-			if (!charger_is_present())
-			{
+			if (!charger_is_present()) {
 				power = 0;
 				break;
 			}
@@ -466,7 +460,10 @@ static int wait_for_power(void)
 		/* alternate LED and charger cycles */
 		pcf50633_reg_set_bit_mask(PCF50633_REG_MBCC1, 1, !led_cycle);
 
-                /* cancel shutdown timer to keep charging */
+                /* cancel shutdown timer to keep charging
+		 * it can get triggered by lowvsys along the way but if it
+		 * didn't kill us then don't let it kill us later
+		 */
                 pcf50633_reg_write(PCF50633_REG_OOCSHDWN, 4);
 	}
 
