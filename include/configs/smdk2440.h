@@ -236,6 +236,7 @@
 #define CFG_MAX_NAND_DEVICE	1
 
 #define CONFIG_MMC		1
+#define CONFIG_MMC_S3C	1	/* Enabling the MMC driver */
 #define CFG_MMC_BASE		0xff000000
 
 #define CONFIG_EXT2		1
