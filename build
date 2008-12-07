@@ -5,8 +5,8 @@ if [ -d .git ] ; then
  VERSION=-$BRANCH\_$HEAD
 fi
 
-make -s ARCH=arm CROSS_COMPILE=`pwd`/../../cross/bin/arm-angstrom-linux-gnueabi- gta02v5_config
-make -s ARCH=arm CROSS_COMPILE=`pwd`/../../cross/bin/arm-angstrom-linux-gnueabi- u-boot.udfu
+make -s ARCH=arm CROSS_COMPILE=/usr/local/openmoko/arm/bin/arm-angstrom-linux-gnueabi- gta02v5_config
+make -s ARCH=arm CROSS_COMPILE=/usr/local/openmoko/arm/bin/arm-angstrom-linux-gnueabi- u-boot.udfu
 if [ $? -eq 0 ] ; then
 	rm -f u-boot-gta02v5v6*
 	cp u-boot.udfu u-boot-gta02v5v6$VERSION.udfu
