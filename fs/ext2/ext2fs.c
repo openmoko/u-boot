@@ -390,6 +390,13 @@ int ext2fs_read_file
 	int log2blocksize = LOG2_EXT2_BLOCK_SIZE (node->data);
 	int blocksize = 1 << (log2blocksize + DISK_SECTOR_BITS);
 	unsigned int filesize = __le32_to_cpu(node->inode.size);
+	int previous_block_number = -1;
+	int delayed_start = 0;
+	int delayed_extent = 0;
+	int delayed_skipfirst = 0;
+	int delayed_next = 0;
+	char * delayed_buf = NULL;
+	int status;
 
 	/* Adjust len so it we can't read past the end of the file.  */
 	if (len > filesize) {
@@ -431,15 +438,56 @@ int ext2fs_read_file
 		if (blknr) {
 			int status;
 
-			status = ext2fs_devread (blknr, skipfirst, blockend, buf);
-			if (status == 0) {
-				return (-1);
+			if (previous_block_number != -1) {
+				if (delayed_next == blknr) {
+					delayed_extent += blockend;
+					delayed_next += blockend >> SECTOR_BITS;
+				} else { /* spill */
+					status = ext2fs_devread(delayed_start,
+								delayed_skipfirst,
+								delayed_extent, delayed_buf);
+					if (status == 0)
+						return -1;
+					previous_block_number = blknr;
+					delayed_start = blknr;
+					delayed_extent = blockend;
+					delayed_skipfirst = skipfirst;
+					delayed_buf = buf;
+					delayed_next = blknr + (blockend >> SECTOR_BITS);
+				}
+			} else {
+				previous_block_number = blknr;
+				delayed_start = blknr;
+				delayed_extent = blockend;
+				delayed_skipfirst = skipfirst;
+				delayed_buf = buf;
+				delayed_next = blknr + (blockend >> SECTOR_BITS);
 			}
 		} else {
-			memset (buf, 0, blocksize - skipfirst);
+			if (previous_block_number != -1) {
+				/* spill */
+				status = ext2fs_devread(delayed_start,
+							delayed_skipfirst,
+							delayed_extent, delayed_buf);
+				if (status == 0)
+					return -1;
+				previous_block_number = -1;
+			}
+			memset(buf, 0, blocksize - skipfirst);
 		}
 		buf += blocksize - skipfirst;
 	}
+
+	if (previous_block_number != -1) {
+		/* spill */
+		status = ext2fs_devread(delayed_start,
+					delayed_skipfirst,
+					delayed_extent, delayed_buf);
+		if (status == 0)
+			return -1;
+		previous_block_number = -1;
+	}
+
 	return (len);
 }
 
