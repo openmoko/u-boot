@@ -89,18 +89,6 @@ unsigned char CRC7(u8 * pu8, int cnt)
 	return (crc << 1) | 1;
 }
 
-ulong mmc_bread(int dev_num, ulong blknr, ulong blkcnt, void *dst)
-{
-	ulong src = blknr * MMC_BLOCK_SIZE;
-
-	if (!blkcnt)
-		return 0;
-
-/*	printf("mmc_bread(%d, %ld, %ld, %p)\n", dev_num, blknr, blkcnt, dst); */
-	mmc_read(src, dst, blkcnt * MMC_BLOCK_SIZE);
-	return blkcnt;
-}
-
 /* MMC_DEFAULT_RCA should probably be just 1, but this may break other code
    that expects it to be shifted. */
 static u_int16_t rca = MMC_DEFAULT_RCA >> 16;
@@ -406,7 +394,8 @@ static u_int8_t ldo_voltage(unsigned int millivolts)
 	return millivolts / 100;
 }
 
-int mmc_read(ulong src, uchar *dst, int size)
+static
+int glamo_mmc_read(ulong src, uint blksize, uchar *dst, int size)
 {
 	int resp;
 	u8 response[16];
@@ -429,17 +418,23 @@ int mmc_read(ulong src, uchar *dst, int size)
 	while (size) {
 		switch (card_type) {
 		case CARDTYPE_SDHC: /* block addressing */
+			if (blksize != MMC_BLOCK_SIZE) {
+				printf("Bad align on src\n");
+				return 0;
+			}
 			resp = mmc_cmd(MMC_READ_SINGLE_BLOCK,
-				       src >> MMC_BLOCK_SIZE_BITS,
+				       src,
 				       MMC_CMD_ADTC | MMC_RSP_R1 |
 				       MMC_DATA_READ, MMC_BLOCK_SIZE, 1, 0,
 				       (u16 *)&response[0]);
+			src += 1;
 			break;
 		default: /* byte addressing */
-			resp = mmc_cmd(MMC_READ_SINGLE_BLOCK, src,
+			resp = mmc_cmd(MMC_READ_SINGLE_BLOCK, src * blksize,
 				MMC_CMD_ADTC | MMC_RSP_R1 | MMC_DATA_READ,
 				MMC_BLOCK_SIZE, 1, 0,
 				(u16 *)&response[0]);
+			src += MMC_BLOCK_SIZE / blksize;
 			break;
 		}
 		do_pio_read((u16 *)dst, MMC_BLOCK_SIZE >> 1);
@@ -449,9 +444,29 @@ int mmc_read(ulong src, uchar *dst, int size)
 		else
 			size = 0;
 		dst += MMC_BLOCK_SIZE;
-		src += MMC_BLOCK_SIZE;
 	}
 	return size_original;
+}
+
+ulong mmc_bread(int dev_num, ulong blknr, ulong blkcnt, void *dst)
+{
+	ulong size = blkcnt * MMC_BLOCK_SIZE;
+
+	if (!blkcnt)
+		return 0;
+
+/*	printf("mmc_bread(%d, %ld, %ld, %p)\n", dev_num, blknr, blkcnt, dst); */
+	glamo_mmc_read(blknr, MMC_BLOCK_SIZE, dst, size);
+	return blkcnt;
+}
+
+int mmc_read(ulong src, uchar *dst, int size)
+{
+        if (src & (MMC_BLOCK_SIZE - 1))
+                return (glamo_mmc_read (src, 1, dst, size));
+        else
+                return (glamo_mmc_read (src >> MMC_BLOCK_SIZE_BITS,
+                                        MMC_BLOCK_SIZE, dst, size));
 }
 
 int mmc_write(uchar *src, ulong dst, int size)
