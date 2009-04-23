@@ -42,6 +42,10 @@ extern int ext2fs_devread (int sector, int byte_offset, int byte_len,
 /* Maximum nesting of symlinks, used to prevent a loop.  */
 #define	EXT2_MAX_SYMLINKCNT	8
 
+/* The good old revision and the default inode size.  */
+#define EXT2_GOOD_OLD_REVISION		0
+#define EXT2_GOOD_OLD_INODE_SIZE	128
+
 /* Filetype used in directory entry.  */
 #define	FILETYPE_UNKNOWN	0
 #define	FILETYPE_REG		1
@@ -65,6 +69,15 @@ extern int ext2fs_devread (int sector, int byte_offset, int byte_len,
 
 /* The size of an ext2 block in bytes.  */
 #define EXT2_BLOCK_SIZE(data)	   (1 << LOG2_BLOCK_SIZE(data))
+
+/* The revision level.  */
+#define EXT2_REVISION(data)	__le32_to_cpu (data->sblock.revision_level)
+
+/* The inode size.  */
+#define EXT2_INODE_SIZE(data)	\
+	(EXT2_REVISION (data) == EXT2_GOOD_OLD_REVISION \
+	 ? EXT2_GOOD_OLD_INODE_SIZE \
+	 : __le16_to_cpu (data->sblock.inode_size))
 
 /* The ext2 superblock.  */
 struct ext2_sblock {
@@ -217,7 +230,7 @@ static int ext2fs_read_inode
 	if (status == 0) {
 		return (0);
 	}
-	inodes_per_block = EXT2_BLOCK_SIZE (data) / 128;
+	inodes_per_block = EXT2_BLOCK_SIZE (data) / EXT2_INODE_SIZE (data);
 	blkno = (ino % __le32_to_cpu (sblock->inodes_per_group)) /
 		inodes_per_block;
 	blkoff = (ino % __le32_to_cpu (sblock->inodes_per_group)) %
@@ -228,7 +241,7 @@ static int ext2fs_read_inode
 	/* Read the inode.  */
 	status = ext2fs_devread (((__le32_to_cpu (blkgrp.inode_table_id) +
 				   blkno) << LOG2_EXT2_BLOCK_SIZE (data)),
-				 sizeof (struct ext2_inode) * blkoff,
+				 EXT2_INODE_SIZE (data) * blkoff,
 				 sizeof (struct ext2_inode), (char *) inode);
 	if (status == 0) {
 		return (0);
