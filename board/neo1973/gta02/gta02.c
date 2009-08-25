@@ -467,6 +467,8 @@ static int wait_for_power(void)
                 pcf50633_reg_write(PCF50633_REG_OOCSHDWN, 4);
 	}
 
+	pcf50633_reg_set_bit_mask(PCF50633_REG_MBCC1, 1, 1); /* charge ! */
+
 	/* switch off the AUX LED */
 	neo1973_led(GTA02_LED_AUX_RED, 0);
 
@@ -490,8 +492,6 @@ static void pcf50633_late_init(void)
 	pcf50633_reg_write(PCF50633_REG_LDO6ENA, recent);
 
 	pcf50633_reg_write(PCF50633_REG_MBCC5, 0xff); /* 1A USB fast charge */
-
-	pcf50633_reg_set_bit_mask(PCF50633_REG_MBCC1, 1, 1); /* charge ! */
 }
 
 int board_late_init(void)

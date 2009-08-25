@@ -89,7 +89,7 @@ const u_int8_t pcf50633_initial_regs[__NUM_PCF50633_REGS] = {
 
 	[PCF50633_REG_DCDCPFM]	= 0x00, /* off by default*/
 
-	[PCF50633_REG_MBCC1]	= 0xe6,
+	[PCF50633_REG_MBCC1]	= 0xe7, /* enable charger, 2 h limit */
 	[PCF50633_REG_MBCC2]	= 0x28,	/* Vbatconid=2.7V, Vmax=4.20V */
 	[PCF50633_REG_MBCC3]	= 0x19,	/* 25/255 == 98mA pre-charge */
 	[PCF50633_REG_MBCC4]	= 0xff, /* 255/255 == 1A adapter fast */
